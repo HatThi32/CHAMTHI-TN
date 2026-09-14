@@ -18,7 +18,7 @@ version = 0.1.0
 #   không cần sửa gì thêm. Lưu ý: dùng opencv sẽ khiến APK nặng hơn nhiều
 #   (150-250MB) và build lâu hơn (có thể 45-90 phút thay vì ~15-20 phút).
 # ---------------------------------------------------------------------------
-requirements = python3,kivy==2.3.0,pillow,numpy,openpyxl,plyer,qrcode,pyzbar,zbar
+requirements = python3,kivy==2.3.0,pillow,numpy,openpyxl,plyer,qrcode,opencv
 
 orientation = portrait
 fullscreen = 0
