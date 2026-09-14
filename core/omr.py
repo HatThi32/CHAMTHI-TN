@@ -1,47 +1,46 @@
 """
-Đọc ảnh phiếu trả lời đã tô (chụp bằng điện thoại) và trả về đáp án của học
-sinh. Phiên bản này CHỈ dùng Pillow + NumPy (không dùng OpenCV) để gói APK
-Android nhẹ và dễ build hơn (OpenCV rất nặng và khó build cho di động).
+Đọc ảnh phiếu trả lời đã tô. Phiên bản này CHỈ dùng Python thuần + Pillow -
+KHÔNG dùng NumPy/OpenCV - để loại bỏ hoàn toàn các lỗi build liên quan đến
+thư viện native khi đóng gói APK Android (đây là nguyên nhân gây lỗi build
+nhiều nhất khi dùng Buildozer/python-for-android).
 
 Quy trình:
   1. Tìm 4 ô vuông đen ở 4 góc ảnh (mốc căn chỉnh) bằng flood-fill vùng tối
-     trong từng góc ảnh (không cần OpenCV).
-  2. Giải hệ phương trình homography (biến đổi phối cảnh) bằng NumPy, dùng
-     PIL Image.transform(..., Image.PERSPECTIVE, coeffs) để "duỗi thẳng"
-     ảnh về đúng kích thước canvas chuẩn.
-  3. Lấy mẫu từng ô tròn theo layout chuẩn, tính tỉ lệ điểm ảnh tối để biết
-     ô nào đã được tô.
+     trong từng góc ảnh.
+  2. Giải hệ phương trình phối cảnh (homography) bằng phép khử Gauss thuần
+     Python, dùng PIL Image.transform(..., Image.PERSPECTIVE, coeffs) để
+     "duỗi thẳng" ảnh về đúng kích thước canvas chuẩn.
+  3. Lấy mẫu từng ô tròn theo layout chuẩn (dùng PIL.Image.histogram() để
+     tính ngưỡng Otsu và tỉ lệ điểm ảnh tối - không cần mảng số).
 """
 
 import json
-import numpy as np
 from PIL import Image
 
 from .layout import build_layout, marker_positions, CANVAS_W, CANVAS_H, MARKER_SIZE, BUBBLE_R, CHARS_PART3
-from .template import QR_BOX
 
 FILL_THRESHOLD = 0.45  # tỉ lệ pixel tối tối thiểu để coi là "đã tô"
 
+
+class OMRError(Exception):
+    pass
+
+
 # ---------------------------------------------------------------- Giải mã QR
-# Ưu tiên pyzbar (nhẹ, nhanh); nếu môi trường (ví dụ khi build Android) không
-# có pyzbar, thử dùng OpenCV (cv2.QRCodeDetector) như phương án dự phòng.
-# Nếu cả hai đều không có, app vẫn hoạt động bằng cách đọc mã đề/SBD qua các
-# ô tô số như phiên bản trước (xem read_sheet()).
 try:
     from pyzbar import pyzbar as _pyzbar
     _QR_BACKEND = "pyzbar"
 except Exception:
     try:
-        import cv2 as _cv2
+        import cv2 as _cv2  # noqa
         _QR_BACKEND = "opencv"
     except Exception:
         _QR_BACKEND = None
 
 
 def decode_qr(pil_img):
-    """Thử tìm và giải mã QR trên ảnh (ảnh gốc, CHƯA warp, vì QR tự có khả
-    năng chịu góc nghiêng/xoay nhẹ). Trả về dict {'exam_code':.., 'sbd':..}
-    hoặc None nếu không tìm/giải mã được."""
+    """Thử tìm và giải mã QR trên ảnh (ảnh gốc, CHƯA warp). Trả về dict
+    {'exam_code':.., 'sbd':..} hoặc None nếu không tìm/giải mã được."""
     if _QR_BACKEND is None:
         return None
     try:
@@ -56,7 +55,8 @@ def decode_qr(pil_img):
                     continue
             return None
         else:  # opencv
-            arr = np.array(pil_img.convert("RGB"))[:, :, ::-1]  # RGB -> BGR
+            import numpy as np
+            arr = np.array(pil_img.convert("RGB"))[:, :, ::-1]
             detector = _cv2.QRCodeDetector()
             data, points, _ = detector.detectAndDecode(arr)
             if data:
@@ -71,19 +71,13 @@ def decode_qr(pil_img):
         return None
 
 
-
-class OMRError(Exception):
-    pass
-
-
-# ---------------------------------------------------------------- Otsu (numpy)
-def _otsu_threshold(gray_arr):
-    """Tính ngưỡng đen/trắng tối ưu (thuật toán Otsu) chỉ bằng NumPy."""
-    hist, _ = np.histogram(gray_arr, bins=256, range=(0, 256))
-    total = gray_arr.size
+# ---------------------------------------------------------------- Otsu (thuần Python)
+def _otsu_threshold(gray_img):
+    hist = gray_img.histogram()
+    total = sum(hist)
     if total == 0:
         return 128
-    sum_all = float(np.dot(hist, np.arange(256)))
+    sum_all = float(sum(i * hist[i] for i in range(256)))
     w_b = 0.0
     sum_b = 0.0
     best_t, max_var = 128, -1.0
@@ -104,21 +98,17 @@ def _otsu_threshold(gray_arr):
 
 
 # ---------------------------------------------------------------- Tìm mốc góc
-def _all_dark_blobs(binary, max_components=4000):
-    """binary: mảng bool 2D (True = tối). Trả về danh sách các thành phần
-    liên thông (cx, cy, area, bbox_w, bbox_h), dùng flood-fill (BFS) thuần
-    Python. Trả về TẤT CẢ để bên gọi tự chọn theo hình dạng phù hợp nhất,
-    vì thành phần có diện tích lớn nhất không chắc là hình vuông mốc."""
-    h, w = binary.shape
-    visited = np.zeros_like(binary, dtype=bool)
+def _all_dark_blobs(gray_img, threshold):
+    w, h = gray_img.size
+    pix = gray_img.load()
+    visited = [[False] * w for _ in range(h)]
     blobs = []
     for y in range(h):
-        xs = np.nonzero(binary[y] & ~visited[y])[0]
-        for x in xs:
-            if visited[y, x]:
+        for x in range(w):
+            if visited[y][x] or pix[x, y] >= threshold:
                 continue
             stack = [(y, x)]
-            visited[y, x] = True
+            visited[y][x] = True
             ys_all, xs_all = [], []
             while stack:
                 cy, cx = stack.pop()
@@ -126,44 +116,38 @@ def _all_dark_blobs(binary, max_components=4000):
                 xs_all.append(cx)
                 for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
                     ny, nx = cy + dy, cx + dx
-                    if 0 <= ny < h and 0 <= nx < w and binary[ny, nx] and not visited[ny, nx]:
-                        visited[ny, nx] = True
+                    if (0 <= ny < h and 0 <= nx < w and not visited[ny][nx]
+                            and pix[nx, ny] < threshold):
+                        visited[ny][nx] = True
                         stack.append((ny, nx))
             area = len(ys_all)
             bbox_w = max(xs_all) - min(xs_all) + 1
             bbox_h = max(ys_all) - min(ys_all) + 1
             blobs.append((sum(xs_all) / area, sum(ys_all) / area, area, bbox_w, bbox_h))
-            if len(blobs) >= max_components:
-                break
-        if len(blobs) >= max_components:
-            break
     return blobs
 
 
-def _find_corner_marker(gray_arr, corner, region_frac=0.30):
-    h, w = gray_arr.shape
-    rh, rw = int(h * region_frac), int(w * region_frac)
+def _find_corner_marker(gray_img_full, corner, region_frac=0.30):
+    w, h = gray_img_full.size
+    rw, rh = int(w * region_frac), int(h * region_frac)
     if corner == "tl":
-        sub, ox, oy = gray_arr[0:rh, 0:rw], 0, 0
+        box, ox, oy = (0, 0, rw, rh), 0, 0
     elif corner == "tr":
-        sub, ox, oy = gray_arr[0:rh, w - rw:w], w - rw, 0
+        box, ox, oy = (w - rw, 0, w, rh), w - rw, 0
     elif corner == "bl":
-        sub, ox, oy = gray_arr[h - rh:h, 0:rw], 0, h - rh
+        box, ox, oy = (0, h - rh, rw, h), 0, h - rh
     else:
-        sub, ox, oy = gray_arr[h - rh:h, w - rw:w], w - rw, h - rh
+        box, ox, oy = (w - rw, h - rh, w, h), w - rw, h - rh
 
-    if sub.size == 0:
+    if rw <= 0 or rh <= 0:
         return None
+    sub = gray_img_full.crop(box)
     t = _otsu_threshold(sub)
-    binary = sub < t
-    area_img = sub.size
-    blobs = _all_dark_blobs(binary)
+    area_img = sub.size[0] * sub.size[1]
+    blobs = _all_dark_blobs(sub, t)
     if not blobs:
         return None
 
-    # Chọn blob tốt nhất: phải gần vuông (marker) và có diện tích hợp lý;
-    # trong các blob đạt tiêu chí, ưu tiên blob có diện tích lớn nhất
-    # (mốc thường là hình đặc lớn hơn các nét chữ/ô tròn xung quanh).
     best = None
     for (cx, cy, area, bbox_w, bbox_h) in blobs:
         if area < area_img * 0.0008 or area > area_img * 0.30:
@@ -173,8 +157,6 @@ def _find_corner_marker(gray_arr, corner, region_frac=0.30):
         aspect = bbox_w / float(bbox_h)
         if not (0.6 < aspect < 1.6):
             continue
-        # Độ "đặc" (fill ratio trong bounding box) phải cao vì marker là
-        # hình vuông tô đặc, khác với các ký tự/đường viền ô tròn thưa.
         solidity = area / float(bbox_w * bbox_h)
         if solidity < 0.55:
             continue
@@ -189,42 +171,47 @@ def _find_corner_marker(gray_arr, corner, region_frac=0.30):
 
 # ---------------------------------------------------------------- Homography
 def _compute_perspective_coeffs(dst_pts, src_pts):
-    """Giải hệ 8 phương trình tuyến tính để tìm hệ số phối cảnh, dùng cho
-    PIL Image.transform(size, Image.PERSPECTIVE, coeffs). coeffs map từ
-    toạ độ ĐÍCH (canvas chuẩn) sang toạ độ NGUỒN (ảnh chụp gốc)."""
-    A, B = [], []
+    n = 8
+    A = []
     for (X, Y), (x, y) in zip(dst_pts, src_pts):
-        A.append([X, Y, 1, 0, 0, 0, -x * X, -x * Y])
-        B.append(x)
-        A.append([0, 0, 0, X, Y, 1, -y * X, -y * Y])
-        B.append(y)
-    A = np.array(A, dtype=np.float64)
-    B = np.array(B, dtype=np.float64)
-    coeffs = np.linalg.solve(A, B)
-    return tuple(coeffs)
+        A.append([X, Y, 1, 0, 0, 0, -x * X, -x * Y, x])
+        A.append([0, 0, 0, X, Y, 1, -y * X, -y * Y, y])
+
+    for col in range(n):
+        pivot_row = max(range(col, n), key=lambda r: abs(A[r][col]))
+        A[col], A[pivot_row] = A[pivot_row], A[col]
+        pivot_val = A[col][col]
+        if abs(pivot_val) < 1e-9:
+            raise OMRError("Không thể tính toán chỉnh phối cảnh (4 mốc góc bất thường).")
+        for c in range(col, n + 1):
+            A[col][c] /= pivot_val
+        for r in range(n):
+            if r == col:
+                continue
+            factor = A[r][col]
+            if factor != 0:
+                for c in range(col, n + 1):
+                    A[r][c] -= factor * A[col][c]
+
+    return tuple(A[r][n] for r in range(n))
 
 
 def find_markers_and_warp(pil_img):
-    """Tìm 4 mốc góc trên ảnh chụp và trả về ảnh PIL đã "duỗi thẳng" về
-    đúng kích thước canvas chuẩn (CANVAS_W x CANVAS_H)."""
     pil_img = pil_img.convert("RGB")
-    gray_full = np.array(pil_img.convert("L"), dtype=np.uint8)
+    gray_full = pil_img.convert("L")
+    w, h = gray_full.size
 
-    # Tìm nhanh trên ảnh thu nhỏ để đỡ tốn thời gian, sau đó quy đổi lại
-    # toạ độ về ảnh gốc.
-    h, w = gray_full.shape
     max_dim = 900
     scale = min(1.0, max_dim / float(max(w, h)))
     if scale < 1.0:
-        small_img = pil_img.convert("L").resize((max(1, int(w * scale)), max(1, int(h * scale))), Image.BILINEAR)
-        gray_small = np.array(small_img, dtype=np.uint8)
+        small_img = gray_full.resize((max(1, int(w * scale)), max(1, int(h * scale))), Image.BILINEAR)
     else:
-        gray_small = gray_full
+        small_img = gray_full
         scale = 1.0
 
     src_pts_small = {}
     for c in ["tl", "tr", "bl", "br"]:
-        pt = _find_corner_marker(gray_small, c)
+        pt = _find_corner_marker(small_img, c)
         if pt is None:
             raise OMRError(
                 f"Không tìm thấy mốc góc '{c}' trên ảnh. Hãy chụp đủ 4 góc phiếu, "
@@ -250,20 +237,22 @@ def find_markers_and_warp(pil_img):
 
 
 # ---------------------------------------------------------------- Đọc ô tròn
-def _fill_ratio(gray_arr, cx, cy, r=BUBBLE_R):
-    h, w = gray_arr.shape
+def _fill_ratio(gray_img, cx, cy, r=BUBBLE_R):
+    w, h = gray_img.size
     x1, y1 = max(0, int(cx - r)), max(0, int(cy - r))
     x2, y2 = min(w, int(cx + r)), min(h, int(cy + r))
     if x2 <= x1 or y2 <= y1:
         return 0.0
-    patch = gray_arr[y1:y2, x1:x2]
+    patch = gray_img.crop((x1, y1, x2, y2))
     t = _otsu_threshold(patch)
-    dark = int(np.count_nonzero(patch < t))
-    return dark / float(patch.size)
+    hist = patch.histogram()
+    dark = sum(hist[:t])
+    total = patch.size[0] * patch.size[1]
+    return dark / float(total) if total else 0.0
 
 
-def _pick_best(gray_arr, bubbles, allow_none=True):
-    scored = [(_fill_ratio(gray_arr, cx, cy), label) for (cx, cy, label) in bubbles]
+def _pick_best(gray_img, bubbles, allow_none=True):
+    scored = [(_fill_ratio(gray_img, cx, cy), label) for (cx, cy, label) in bubbles]
     scored.sort(reverse=True)
     if not scored:
         return None
@@ -274,12 +263,10 @@ def _pick_best(gray_arr, bubbles, allow_none=True):
 
 
 def read_sheet(pil_img, structure):
-    """Đọc toàn bộ phiếu. `pil_img` là ảnh PIL (RGB) chụp/scan phiếu đã tô.
-    Trả về dict {'exam_code', 'sbd', 'qr_used', 'answers': {'part1','part2','part3'}}."""
     qr_data = decode_qr(pil_img)
 
     warped = find_markers_and_warp(pil_img)
-    gray = np.array(warped.convert("L"), dtype=np.uint8)
+    gray = warped.convert("L")
     layout = build_layout(structure)
 
     if qr_data is not None and qr_data.get("exam_code"):
@@ -287,7 +274,6 @@ def read_sheet(pil_img, structure):
         sbd = str(qr_data.get("sbd") or "")
         qr_used = True
         if not sbd:
-            # QR không mang SBD (phiếu dùng chung theo mã đề) -> vẫn đọc SBD qua ô tô
             sbd_digits = []
             for col_bubbles in layout["sbd_bubbles"]:
                 digit = _pick_best(gray, col_bubbles, allow_none=False)
@@ -295,8 +281,6 @@ def read_sheet(pil_img, structure):
             sbd = "".join(sbd_digits)
     else:
         qr_used = False
-        # Không đọc được QR (thiếu thư viện, QR mờ/bị che...) -> dự phòng bằng
-        # cách đọc mã đề/SBD qua các ô tô số như phiên bản gốc.
         code_digits = []
         for col_bubbles in layout["exam_code_bubbles"]:
             digit = _pick_best(gray, col_bubbles, allow_none=False)
@@ -309,10 +293,8 @@ def read_sheet(pil_img, structure):
             sbd_digits.append(digit or "0")
         sbd = "".join(sbd_digits)
 
-    # Phần I
     part1 = [_pick_best(gray, item["bubbles"]) for item in layout["part1"]]
 
-    # Phần II
     part2 = []
     for item in layout["part2"]:
         row = []
@@ -329,7 +311,6 @@ def read_sheet(pil_img, structure):
                 row.append(False)
         part2.append(row)
 
-    # Phần III
     part3 = []
     for item in layout["part3"]:
         chars = []
