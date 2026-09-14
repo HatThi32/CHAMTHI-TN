@@ -1,0 +1,8 @@
+kivy
+pillow
+numpy
+openpyxl
+plyer
+qrcode
+# pyzbar cần cài thêm thư viện hệ thống libzbar0 (Linux: sudo apt install libzbar0)
+pyzbar
