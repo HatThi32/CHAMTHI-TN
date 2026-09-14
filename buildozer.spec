@@ -8,7 +8,7 @@ source.include_exts = py,png,jpg,jpeg,json,ttf
 
 version = 0.1.0
 
-requirements = python3==3.11.9,kivy==2.3.0,pillow,openpyxl,plyer,qrcode
+requirements = python3==3.14,kivy==2.3.0,pillow,openpyxl,plyer,qrcode 
 
 orientation = portrait
 fullscreen = 0
