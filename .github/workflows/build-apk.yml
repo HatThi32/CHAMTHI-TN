@@ -1,0 +1,33 @@
+name: Build Android APK
+
+# Chạy tự động mỗi khi bạn push code lên nhánh main, hoặc bấm chạy tay
+# trong tab "Actions" trên GitHub ("Run workflow").
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Lấy code
+        uses: actions/checkout@v4
+
+      - name: Cài Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Build APK bằng Buildozer
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
+        with:
+          command: buildozer android debug
+          buildozer_version: stable
+
+      - name: Tải lên file APK (để bạn tải về máy)
+        uses: actions/upload-artifact@v4
+        with:
+          name: cham-thi-trac-nghiem-apk
+          path: ${{ steps.buildozer.outputs.filename }}
