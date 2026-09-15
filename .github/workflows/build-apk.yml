@@ -25,10 +25,10 @@ jobs:
             zlib1g-dev libncurses-dev cmake libffi-dev libssl-dev \
             automake build-essential ccache libltdl-dev
 
-      - name: Cài Buildozer & Cython
+      - name: Cài Buildozer
         run: |
           pip install --upgrade pip
-          pip install buildozer cython==0.29.33
+          pip install buildozer cython
 
       - name: Build APK bằng Buildozer
         run: |
