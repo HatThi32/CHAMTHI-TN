@@ -8,6 +8,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [arm64-v8a, armeabi-v7a]
     steps:
       - name: Lấy code
         uses: actions/checkout@v4
@@ -30,6 +34,10 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython==0.29.33
 
+      - name: Chọn kiến trúc build (${{ matrix.arch }})
+        run: |
+          sed -i "s/^android.archs.*/android.archs = ${{ matrix.arch }}/" buildozer.spec
+
       - name: Build APK bằng Buildozer
         run: |
           yes | buildozer -v android debug
@@ -37,5 +45,5 @@ jobs:
       - name: Tải lên file APK (để bạn tải về máy)
         uses: actions/upload-artifact@v4
         with:
-          name: cham-thi-trac-nghiem-apk
+          name: cham-thi-trac-nghiem-apk-${{ matrix.arch }}
           path: bin/*.apk
