@@ -1401,7 +1401,7 @@ function showKeyQR(e){
 /* ---------- Mã QR tra điểm cho học sinh ---------- */
 function appBase(){try{const v=localStorage.getItem('ct_base');if(v)return v;}catch(e){}
  if(/^https?:$/.test(location.protocol)&&!/claude\.(ai|site|com)|claudeusercontent|androidplatform\.net|localhost/.test(location.hostname))return location.origin+location.pathname;return DEFAULT_BASE;}
-const BUILD='09/11/2026 20:20';
+const BUILD='09/11/2026 20:39';
 const DEFAULT_BASE='https://hatthi32.github.io/CHAMTHI-TN/';
 const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const unb64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
@@ -1803,20 +1803,20 @@ V.classEdit=async(p)=>{
 
 /* ---------- Phiếu trả lời ---------- */
 V.sheets=async()=>({title:'Tải phiếu trả lời',html:`
- <div class="note">In trên giấy A4, chọn tỉ lệ 100% (kích thước thực), không chọn "vừa trang". Mẫu nửa trang in 2 phiếu trên một tờ: cắt đôi theo đường nét đứt trước khi phát cho học sinh. Mỗi mẫu có ô mã ở cạnh dưới để app tự nhận ra mẫu khi quét.</div>
- <div class="thumbs">${TPL_IDS.map(id=>{const T=TPLS[id],half=fmtOf(T).id==='a5';return`<div class="card"><canvas data-th="${id}" width="420" height="594" aria-label="Xem trước phiếu mẫu ${T.code}"></canvas><b>Mẫu ${T.code} · ${esc(T.short)}</b><span class="note">${esc(T.subjects)}<br>Số câu: ${T.p1}; ${T.p2}; ${T.p3}</span><span class="pill${half?' ok':''}">${half?'Nửa trang A4 · 2 phiếu/tờ':'Trọn trang A4'}</span><button class="btn sm pri" data-pdf="${id}">Tải PDF</button><button class="btn sm" data-png="${id}">Tải ảnh PNG</button></div>`}).join('')}</div>`,
+ <div class="note">Mỗi file là đúng một phiếu, chèn thẳng được vào đề thi (Word, PDF) hoặc in riêng. Ảnh PNG có độ phân giải 300 dpi, giữ đúng kích thước khi chèn: phiếu trọn trang 21 × 29,7 cm, phiếu nửa trang 21 × 14,85 cm. Khi in, chọn tỉ lệ 100% (kích thước thực), không chọn "vừa trang", để app đọc chính xác.</div>
+ <div class="thumbs">${TPL_IDS.map(id=>{const T=TPLS[id],half=fmtOf(T).id==='a5';return`<div class="card"><canvas data-th="${id}" width="420" height="${half?297:594}" aria-label="Xem trước phiếu mẫu ${T.code}"></canvas><b>Mẫu ${T.code} · ${esc(T.short)}</b><span class="note">${esc(T.subjects)}<br>Số câu: ${T.p1}; ${T.p2}; ${T.p3}</span><span class="pill${half?' ok':''}">${half?'Nửa trang A4 · 21 × 14,85 cm':'Trọn trang A4 · 21 × 29,7 cm'}</span><button class="btn sm pri" data-pdf="${id}">Tải PDF</button><button class="btn sm" data-png="${id}">Tải ảnh PNG</button></div>`}).join('')}</div>`,
  async after(){
   await fontsReady();
-  const sheetA4=(ctx,id,K)=>{const L=lay(id);ctx.fillStyle='#fff';ctx.fillRect(0,0,210*K,297*K);
-   if(L.F.id==='a4'){drawSheet(ctx,L,K);return;}
-   drawSheet(ctx,L,K);ctx.save();ctx.translate(0,148.5*K);drawSheet(ctx,L,K);ctx.restore();
-   ctx.save();ctx.strokeStyle='#888';ctx.lineWidth=0.25*K;ctx.setLineDash([2*K,1.5*K]);ctx.beginPath();ctx.moveTo(0,148.5*K);ctx.lineTo(210*K,148.5*K);ctx.stroke();
-   ctx.fillStyle='#888';ctx.font=`${2.4*K}px "Plus Jakarta Sans",Arial,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.fillRect(80*K,147*K,50*K,3*K);ctx.fillStyle='#888';ctx.fillText('✂  cắt theo đường này',105*K,148.5*K);ctx.restore();};
-  document.querySelectorAll('[data-th]').forEach(c=>sheetA4(c.getContext('2d'),c.dataset.th,2));
-  const big=id=>{const K=11.811,c=document.createElement('canvas');c.width=Math.round(210*K);c.height=Math.round(297*K);sheetA4(c.getContext('2d'),id,K);return c;};
+  document.querySelectorAll('[data-th]').forEach(c=>drawSheet(c.getContext('2d'),lay(c.dataset.th),2));
+  const big=id=>{const F=lay(id).F,K=11.811,c=document.createElement('canvas');c.width=Math.round(F.W*K);c.height=Math.round(F.H*K);drawSheet(c.getContext('2d'),lay(id),K);return c;};
   const fname=id=>'Phieu_tra_loi_mau'+TPLS[id].code+'_'+TPLS[id].fn;
-  document.querySelectorAll('[data-pdf]').forEach(b=>b.onclick=async()=>{if(!need('jspdf','PDF'))return;b.disabled=true;await fontsReady();const c=big(b.dataset.pdf);const doc=new jspdf.jsPDF({unit:'mm',format:'a4',compress:true});doc.addImage(c.toDataURL('image/png'),'PNG',0,0,210,297,undefined,'FAST');b.disabled=false;saveFile(fname(b.dataset.pdf)+'.pdf',doc.output('arraybuffer'));});
-  document.querySelectorAll('[data-png]').forEach(b=>b.onclick=async()=>{await fontsReady();const c=big(b.dataset.png);saveFile(fname(b.dataset.png)+'.png',await canvasBlob(c,'image/png'));});
+  const pngDpi=async(c)=>{const b=await canvasBlob(c,'image/png');try{const u=new Uint8Array(await readBuf(b));// chèn khối pHYs 300 dpi để Word giữ đúng kích thước
+    const ppm=11811,ph=new Uint8Array([0,0,0,9,112,72,89,115,ppm>>>24,(ppm>>16)&255,(ppm>>8)&255,ppm&255,ppm>>>24,(ppm>>16)&255,(ppm>>8)&255,ppm&255,1,0,0,0,0]);
+    const crcT=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();let crc=0xffffffff;for(let i=4;i<17;i++)crc=crcT[(crc^ph[i])&255]^(crc>>>8);crc=(crc^0xffffffff)>>>0;
+    ph[17]=crc>>>24;ph[18]=(crc>>16)&255;ph[19]=(crc>>8)&255;ph[20]=crc&255;const out=new Uint8Array(u.length+21);out.set(u.subarray(0,33),0);out.set(ph,33);out.set(u.subarray(33),54);return new Blob([out],{type:'image/png'});}catch(e){return b;}};
+  document.querySelectorAll('[data-pdf]').forEach(b=>b.onclick=async()=>{if(!need('jspdf','PDF'))return;b.disabled=true;await fontsReady();const id=b.dataset.pdf,F=lay(id).F,c=big(id);
+   const doc=new jspdf.jsPDF({unit:'mm',format:[F.W,F.H],orientation:F.W>F.H?'landscape':'portrait',compress:true});doc.addImage(c.toDataURL('image/png'),'PNG',0,0,F.W,F.H,undefined,'FAST');b.disabled=false;saveFile(fname(id)+'.pdf',doc.output('arraybuffer'));});
+  document.querySelectorAll('[data-png]').forEach(b=>b.onclick=async()=>{await fontsReady();const c=big(b.dataset.png);saveFile(fname(b.dataset.png)+'.png',await pngDpi(c));});
  }});
 
 /* ---------- Cài đặt & sao lưu ---------- */
@@ -1841,7 +1841,7 @@ V.settings=async()=>({title:'Cài đặt & sao lưu',html:`
 /* ---------- Hướng dẫn ---------- */
 V.guide=async()=>({title:'Hướng dẫn',html:`
  <div class="card"><h3>Quy trình chấm</h3><ol class="steps">
- <li><b>Tải phiếu trả lời</b> đúng nhóm môn, in A4 tỉ lệ 100%. Mẫu nửa trang (Sử – Tin – CN – KTPL, Ngoại ngữ, Tổng hợp nửa trang) in 2 phiếu một tờ, cắt đôi trước khi phát.</li>
+ <li><b>Tải phiếu trả lời</b> đúng nhóm môn, in A4 tỉ lệ 100%. Mẫu nửa trang (Sử – Tin – CN – KTPL, Ngoại ngữ, Tổng hợp nửa trang) có khổ 21 × 14,85 cm, chèn được vào cuối đề thi hoặc in 2 phiếu trên một tờ A4.</li>
  <li><b>Lớp học</b> (không bắt buộc): tạo lớp, nhập SBD và họ tên, hoặc nhập từ file Excel mẫu.</li>
  <li><b>Danh sách chấm → +</b>: tạo bài kiểm tra, chọn mẫu phiếu và số câu từng phần. Nếu đề làm bằng app xáo đề, chọn <b>Từ file đáp án app xáo đề</b>: app tự điền môn, tên bài, số câu, mẫu phiếu và nạp đáp án mọi mã đề, bỏ qua bước nhập đáp án.</li>
  <li><b>Đáp án → +</b>: nhập từng mã đề bằng tay, bằng file Excel (mỗi cột một mã đề, mỗi dòng một câu, chia Phần I / II / III; tải file mẫu trong mục Đáp án), hoặc tô đáp án lên một phiếu rồi quét.</li>
