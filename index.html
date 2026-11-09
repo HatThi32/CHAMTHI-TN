@@ -1819,6 +1819,7 @@ V.guide=async()=>({title:'Hướng dẫn',html:`
  <div class="card"><h3>Mẹo để máy đọc chính xác</h3><div class="note">Chụp nơi đủ sáng, tránh bóng tay và bóng điện thoại đổ lên phiếu. Để phiếu phẳng, không gấp góc. Phiếu nên chiếm phần lớn khung hình, đủ 4 ô vuông đen. Nếu bút chì quá nhạt, giảm Độ nhạy trong Cài đặt.</div></div>`});
 
 /* ================= KHỞI ĐỘNG ================= */
+window.__ctUpdated=()=>{modal(`<h2>App vừa được cập nhật</h2><div class="note">Đã tải bản mới nhất của app Chấm Thi. Tải lại để dùng ngay, dữ liệu vẫn giữ nguyên.</div><div class="row" style="justify-content:flex-end"><button class="btn" data-m="x">Để sau</button><button class="btn pri" data-m="r">Tải lại</button></div>`,a=>{if(a==='r')location.reload();});};
 window.__ctBack=()=>{const lv=document.querySelector('.live');if(lv){const b=lv.querySelector('#lStop,#qStop');if(b)b.click();return true;}const md=document.querySelector('.modal');if(md){md.remove();return true;}if(S.stack.length>1){back();return true;}return false;};
 (async()=>{if(location.hash.startsWith('#kq=')){viewerBoot();return;}await DB.open();await loadAll();S.stack=[{v:'home',p:{}}];render();})();
 window.__ct={dbg:{findMarkers,toGray},TPLS,lay,drawSheet,analyzeCanvas,grade,eqAns,DB,loadAll,fontsReady};

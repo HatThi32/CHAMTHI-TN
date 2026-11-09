@@ -1,4 +1,5 @@
 plugins { id 'com.android.application' }
+def nativeVersion = Integer.parseInt(rootProject.file('native-version.txt').text.trim())
 android {
     namespace 'vn.chamthi.app'
     compileSdk 34
@@ -6,10 +7,21 @@ android {
         applicationId 'vn.chamthi.app'
         minSdk 24
         targetSdk 34
-        versionCode Integer.parseInt(System.getenv('VERSION_CODE') ?: '1')
-        versionName '1.' + (System.getenv('VERSION_CODE') ?: '0')
+        versionCode nativeVersion
+        versionName '1.' + nativeVersion
     }
-    buildTypes { debug { minifyEnabled false } }
+    signingConfigs {
+        fixed {
+            storeFile rootProject.file('chamthi.keystore')
+            storePassword 'chamthi2026'
+            keyAlias 'chamthi'
+            keyPassword 'chamthi2026'
+        }
+    }
+    buildTypes {
+        release { minifyEnabled false; signingConfig signingConfigs.fixed }
+        debug { signingConfig signingConfigs.fixed }
+    }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
 }
 dependencies {

@@ -2,6 +2,7 @@ package vn.chamthi.app;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
@@ -29,7 +30,13 @@ import android.widget.Toast;
 import androidx.core.content.FileProvider;
 import androidx.webkit.WebViewAssetLoader;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Arrays;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -42,7 +49,11 @@ import java.util.ArrayList;
 public class MainActivity extends Activity {
     private static final int REQ_FILE = 11;
     private static final int REQ_CAM_PERM = 21;
-    private static final String START_URL = "https://appassets.androidplatform.net/assets/index.html";
+    private static final String START_URL = "https://appassets.androidplatform.net/app/index.html";
+    // Bản web mới nhất trên GitHub (nhánh webapp) và số phiên bản lõi Android (nhánh apk)
+    private static final String WEB_URL = "https://raw.githubusercontent.com/HatThi32/CHAMTHI-TN/webapp/index.html";
+    private static final String NATIVE_VER_URL = "https://raw.githubusercontent.com/HatThi32/CHAMTHI-TN/apk/version.txt";
+    private static final String APK_URL = "https://github.com/HatThi32/CHAMTHI-TN/raw/apk/ChamThi.apk";
 
     private WebView web;
     private ValueCallback<Uri[]> fileCallback;
@@ -61,6 +72,14 @@ public class MainActivity extends Activity {
 
         final WebViewAssetLoader loader = new WebViewAssetLoader.Builder()
                 .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
+                .addPathHandler("/app/", path -> {
+                    // Ưu tiên bản web đã tự cập nhật, nếu chưa có thì dùng bản đi kèm APK
+                    try {
+                        File f = updatedFile();
+                        InputStream in = f.exists() && f.length() > 100000 ? new FileInputStream(f) : getAssets().open("index.html");
+                        return new WebResourceResponse("text/html", "utf-8", in);
+                    } catch (Exception e) { return null; }
+                })
                 .build();
 
         WebSettings s = web.getSettings();
@@ -141,6 +160,67 @@ public class MainActivity extends Activity {
         web.addJavascriptInterface(new Bridge(), "AndroidBridge");
         if (!hasCamera()) requestPermissions(new String[]{Manifest.permission.CAMERA}, REQ_CAM_PERM);
         web.loadUrl(START_URL);
+        checkUpdates();
+    }
+
+    private File updatedFile() { return new File(new File(getFilesDir(), "web"), "index.html"); }
+
+    private static byte[] download(String url) throws Exception {
+        HttpURLConnection c = (HttpURLConnection) new URL(url + "?t=" + System.currentTimeMillis()).openConnection();
+        c.setConnectTimeout(8000);
+        c.setReadTimeout(30000);
+        c.setUseCaches(false);
+        if (c.getResponseCode() != 200) throw new Exception("HTTP " + c.getResponseCode());
+        try (InputStream in = c.getInputStream(); ByteArrayOutputStream bo = new ByteArrayOutputStream()) {
+            byte[] buf = new byte[65536];
+            int n;
+            while ((n = in.read(buf)) > 0) bo.write(buf, 0, n);
+            return bo.toByteArray();
+        }
+    }
+
+    private byte[] currentWeb() {
+        try {
+            File f = updatedFile();
+            InputStream in = f.exists() && f.length() > 100000 ? new FileInputStream(f) : getAssets().open("index.html");
+            try (ByteArrayOutputStream bo = new ByteArrayOutputStream()) {
+                byte[] buf = new byte[65536];
+                int n;
+                while ((n = in.read(buf)) > 0) bo.write(buf, 0, n);
+                in.close();
+                return bo.toByteArray();
+            }
+        } catch (Exception e) { return new byte[0]; }
+    }
+
+    /** Tự cập nhật: tải bản web mới nhất; báo khi có bản APK lõi mới. Không có mạng thì bỏ qua. */
+    private void checkUpdates() {
+        new Thread(() -> {
+            try {
+                byte[] fresh = download(WEB_URL);
+                String head = new String(fresh, 0, Math.min(fresh.length, 4000), "UTF-8");
+                if (fresh.length > 100000 && head.contains("Chấm Thi") && !Arrays.equals(fresh, currentWeb())) {
+                    File dir = new File(getFilesDir(), "web");
+                    dir.mkdirs();
+                    File tmp = new File(dir, "index.html.tmp");
+                    try (FileOutputStream os = new FileOutputStream(tmp)) { os.write(fresh); }
+                    if (tmp.renameTo(updatedFile()))
+                        runOnUiThread(() -> web.evaluateJavascript("window.__ctUpdated&&window.__ctUpdated()", null));
+                }
+            } catch (Exception ignored) { }
+            try {
+                int latest = Integer.parseInt(new String(download(NATIVE_VER_URL), "UTF-8").trim());
+                int mine = getPackageManager().getPackageInfo(getPackageName(), 0).versionCode;
+                if (latest > mine) runOnUiThread(() -> new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("Có bản cài đặt mới")
+                        .setMessage("Đã có app Chấm Thi bản " + latest + " (máy đang dùng bản " + mine + "). Tải về và cài đè lên, dữ liệu vẫn giữ nguyên.")
+                        .setPositiveButton("Tải về", (d, w) -> {
+                            try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(APK_URL))); } catch (Exception ignored) { }
+                        })
+                        .setNegativeButton("Để sau", null)
+                        .show());
+            } catch (Exception ignored) { }
+        }).start();
     }
 
     private boolean hasCamera() {

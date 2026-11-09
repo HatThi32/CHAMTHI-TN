@@ -34,11 +34,9 @@ jobs:
       - name: Build APK
         working-directory: android
         shell: bash
-        env:
-          VERSION_CODE: ${{ github.run_number }}
         run: |
           set -o pipefail
-          gradle assembleDebug --no-daemon --stacktrace 2>&1 | tee ../build.log
+          gradle assembleRelease --no-daemon --stacktrace 2>&1 | tee ../build.log
 
       - name: Đặt APK vào nhánh "apk" để tải về
         if: always()
@@ -46,8 +44,9 @@ jobs:
         run: |
           mkdir -p out
           cp build.log out/build-log.txt || echo "không có log" > out/build-log.txt
-          if [ -f android/app/build/outputs/apk/debug/app-debug.apk ]; then
-            cp android/app/build/outputs/apk/debug/app-debug.apk out/ChamThi.apk
+          if [ -f android/app/build/outputs/apk/release/app-release.apk ]; then
+            cp android/app/build/outputs/apk/release/app-release.apk out/ChamThi.apk
+            cp android/native-version.txt out/version.txt
             echo "THANH CONG - ban build so ${{ github.run_number }} - $(date -u)" > out/TRANG-THAI.txt
           else
             echo "LOI - ban build so ${{ github.run_number }} - $(date -u)" > out/TRANG-THAI.txt
@@ -65,4 +64,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ChamThi-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: android/app/build/outputs/apk/release/app-release.apk
