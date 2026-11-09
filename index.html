@@ -139,8 +139,9 @@ table.t th{font-size:11px;color:var(--brass);font-weight:700;text-transform:uppe
 @keyframes sp{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion: reduce){.spin{animation-duration:3s}}
 .live{position:fixed;inset:0;background:#000;z-index:30;color:#fff}
-.live video,.live .lov{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.live video,.live .lov{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .live .btn{color:var(--ink)}
+.live .btn.pri{color:var(--accent-ink)}
 .ltop{position:absolute;left:0;right:0;top:0;padding:calc(12px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));display:flex;gap:10px;align-items:flex-start;background:linear-gradient(rgba(0,0,0,.65),transparent)}
 .lst{flex:1;font-weight:650;font-size:16px;background:rgba(0,0,0,.55);padding:9px 13px;border-radius:12px}
 .lst.ok{background:#17603f}.lst.err{background:#a92a22}.lst.busyst{background:#16382D}
@@ -771,17 +772,19 @@ function findMarkers(g,w,h,wantCands){
   const m=(I[y1*(W+1)+x1]-I[y0*(W+1)+x1]-I[y1*(W+1)+x0]+I[y0*(W+1)+x0])/((y1-y0)*(x1-x0));const v=sm[y*W+x];if(v<m*0.62&&v<160)mask[y*W+x]=1;}}
  const lab=new Int32Array(W*H),stack=new Int32Array(W*H),cands=[],md=Math.min(W,H);
  let nl=0;
- for(let i=0;i<W*H;i++){if(!mask[i]||lab[i])continue;nl++;let sp=0;stack[sp++]=i;lab[i]=nl;let area=0,sx=0,sy=0,mnx=1e9,mny=1e9,mxx=-1,mxy=-1;
-  while(sp){const p=stack[--sp],px=p%W,py=(p-px)/W;area++;sx+=px;sy+=py;if(px<mnx)mnx=px;if(px>mxx)mxx=px;if(py<mny)mny=py;if(py>mxy)mxy=py;
+ for(let i=0;i<W*H;i++){if(!mask[i]||lab[i])continue;nl++;let sp=0;stack[sp++]=i;lab[i]=nl;let area=0,sx=0,sy=0,sxx=0,syy=0,mnx=1e9,mny=1e9,mxx=-1,mxy=-1;
+  while(sp){const p=stack[--sp],px=p%W,py=(p-px)/W;area++;sx+=px;sy+=py;sxx+=px*px;syy+=py*py;if(px<mnx)mnx=px;if(px>mxx)mxx=px;if(py<mny)mny=py;if(py>mxy)mxy=py;
    if(px>0&&mask[p-1]&&!lab[p-1]){lab[p-1]=nl;stack[sp++]=p-1}
    if(px<W-1&&mask[p+1]&&!lab[p+1]){lab[p+1]=nl;stack[sp++]=p+1}
    if(py>0&&mask[p-W]&&!lab[p-W]){lab[p-W]=nl;stack[sp++]=p-W}
    if(py<H-1&&mask[p+W]&&!lab[p+W]){lab[p+W]=nl;stack[sp++]=p+W}}
   const bw=mxx-mnx+1,bh=mxy-mny+1;
   if(bw<md*0.012||bh<md*0.012||bw>md*0.12||bh>md*0.12)continue;
-  const asp=bw/bh;if(asp<0.6||asp>1.65)continue;
-  const fill=area/(bw*bh);if(fill<0.8)continue;
-  cands.push({x:(sx/area+0.5)*s,y:(sy/area+0.5)*s,a:area*s*s,bw:bw*s,bh:bh*s});}
+  const asp=bw/bh;if(asp<0.55||asp>1.8)continue;
+  // ô vuông đặc ở mọi góc xoay: vùng phủ ≥ 50% khung bao và mô-men bậc hai gần đúng của hình vuông (diện tích ≈ 6·phương sai)
+  const fill=area/(bw*bh);if(fill<0.5||area<20)continue;
+  const mx=sx/area,my=sy/area,vr=(sxx/area-mx*mx)+(syy/area-my*my)+1/6,q=area/(6*vr);if(q<0.8||q>1.18)continue;
+  cands.push({x:(mx+0.5)*s,y:(my+0.5)*s,a:area*s*s,bw:bw*s,bh:bh*s,q});}
  if(wantCands)return cands;
  if(cands.length<4)return null;
  const pickBy=f=>cands.reduce((a,b)=>f(b)>f(a)?b:a);
@@ -792,6 +795,11 @@ function findMarkers(g,w,h,wantCands){
  const d1=Math.hypot(tl.x-br.x,tl.y-br.y),d2=Math.hypot(tr.x-bl.x,tr.y-bl.y);if(Math.min(d1,d2)<md*s*0.35)return null;
  return q.map(c=>[c.x,c.y]);
 }
+// Tinh chỉnh tâm ô định vị trên ảnh gốc (từ vị trí gần đúng của khung hình xem trước)
+function refineMarkers(g,w,h,pts){return pts.map(([x,y,side])=>{const r0=Math.max(4,Math.round((side||Math.min(w,h)*0.03)*0.8));for(let it=0;it<3;it++){
+  const x0=Math.max(0,Math.round(x-r0)),x1=Math.min(w-1,Math.round(x+r0)),y0=Math.max(0,Math.round(y-r0)),y1=Math.min(h-1,Math.round(y+r0));let mn=255,mx=0;
+  for(let v=y0;v<=y1;v+=2)for(let u=x0;u<=x1;u+=2){const q=g[v*w+u];if(q<mn)mn=q;if(q>mx)mx=q;}if(mx-mn<40)break;const th=(mn+mx)/2;let sx=0,sy=0,n=0;
+  for(let v=y0;v<=y1;v++)for(let u=x0;u<=x1;u++)if(g[v*w+u]<th){sx+=u;sy+=v;n++;}if(!n)break;const nx=sx/n+0.5,ny=sy/n+0.5;const moved=Math.hypot(nx-x,ny-y);x=nx;y=ny;if(moved<0.5)break;}return[x,y];});}
 function homography(src,dst){
  const A=[];for(let i=0;i<4;i++){const[x,y]=src[i],[u,v]=dst[i];A.push([x,y,1,0,0,0,-u*x,-u*y,u]);A.push([0,0,0,x,y,1,-v*x,-v*y,v]);}
  for(let c=0;c<8;c++){let p=c;for(let r=c+1;r<8;r++)if(Math.abs(A[r][c])>Math.abs(A[p][c]))p=r;[A[c],A[p]]=[A[p],A[c]];const d=A[c][c];if(Math.abs(d)<1e-12)return null;
@@ -863,7 +871,7 @@ const qName=b=>b.kind==='made'?'Mã đề':b.kind==='sbd'?'Số báo danh':b.kin
 function usedBubble(ex,b){if(!ex)return true;const k=b.kind;if(k==='made')return b.qi<(ex.madeLen||3);if(k==='sbd')return!ex.noSbd;if(k==='p1')return b.qi<ex.n1;if(k==='p2')return b.qi<ex.n2;return b.qi<ex.n3;}
 function analyzeCanvas(cv,ex,hint){const wantTpl=ex?ex.tpl:null;
  const w=cv.width,h=cv.height,ctx=cv.getContext('2d',{willReadFrequently:true}),id=ctx.getImageData(0,0,w,h),g=toGray(id.data);
- const m=hint||findMarkers(g,w,h);
+ const m=hint?refineMarkers(g,w,h,hint):findMarkers(g,w,h);
  if(!m)return{error:'Không thấy đủ 4 ô vuông đen ở 4 góc phiếu. Chụp thẳng từ trên xuống, để lọt cả 4 góc và đặt phiếu trên nền phẳng.'};
  let H=null,code=-1;
  let F=null;
@@ -1393,6 +1401,7 @@ function showKeyQR(e){
 /* ---------- Mã QR tra điểm cho học sinh ---------- */
 function appBase(){try{const v=localStorage.getItem('ct_base');if(v)return v;}catch(e){}
  if(/^https?:$/.test(location.protocol)&&!/claude\.(ai|site|com)|claudeusercontent|androidplatform\.net|localhost/.test(location.hostname))return location.origin+location.pathname;return DEFAULT_BASE;}
+const BUILD='09/11/2026 20:20';
 const DEFAULT_BASE='https://hatthi32.github.io/CHAMTHI-TN/';
 const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const unb64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
@@ -1517,6 +1526,28 @@ async function showScanResult(e,r,batch){
 }
 
 /* ---------- Tự động quét bằng camera trực tiếp ---------- */
+// Khung ngắm nằm trong phần khung hình thực sự hiện trên màn hình (camera phủ kín màn hình)
+function liveGuide(W,H,F,sw,sh){const mkW=F.MK[1][0]-F.MK[0][0],mkH=F.MK[3][1]-F.MK[0][1],r=mkW/mkH,fa=W/H,sa=sw/sh;
+ let vx=0,vy=0,vw=W,vh=H;if(fa>sa){vw=H*sa;vx=(W-vw)/2;}else{vh=W/sa;vy=(H-vh)/2;}
+ const ax=vx+vw*0.07,aw=vw*0.86,ay=vy+vh*0.14,ah=vh*0.66;let gw=aw,gh=gw/r;if(gh>ah){gh=ah;gw=gh*r;}const x0=ax+(aw-gw)/2,y0=ay+(ah-gh)/2;
+ return{pts:[[x0,y0],[x0+gw,y0],[x0+gw,y0+gh],[x0,y0+gh]],gw,gh,box:Math.max(48,Math.min(gw,gh)*0.28),mk:gw*F.mks/mkW};}
+// Tìm 4 ô định vị quanh vùng khung ngắm: cho phép nghiêng, xa gần, lệch
+function liveQuad(cands,GD){
+ const [p0,,p2]=[GD.pts[0],GD.pts[1],GD.pts[2]],gx=p0[0],gy=p0[1],gw=GD.gw,gh=GD.gh,ex=0.36;
+ const C=cands.filter(c=>{const side=Math.sqrt(c.a);return side>=GD.mk*0.66&&side<=GD.mk*2.6&&c.x>gx-gw*ex&&c.x<gx+gw*(1+ex)&&c.y>gy-gh*ex&&c.y<gy+gh*(1+ex);});
+ if(C.length<4)return null;
+ const cxm=gx+gw/2,cym=gy+gh/2,pick=(sx,sy)=>{let b=null,bv=-1e9;for(const c of C){const v=(c.x-cxm)*sx/gw+(c.y-cym)*sy/gh+Math.sqrt(c.a)/GD.mk*0.08;if(v>bv){bv=v;b=c;}}return b;};
+ const q=[pick(-1,-1),pick(1,-1),pick(1,1),pick(-1,1)];if(new Set(q).size<4)return null;
+ const as=q.map(c=>c.a);if(Math.max(...as)/Math.min(...as)>3.5)return null;
+ let sg=0;for(let i=0;i<4;i++){const a=q[i],b=q[(i+1)%4],c=q[(i+2)%4],cr=(b.x-a.x)*(c.y-b.y)-(b.y-a.y)*(c.x-b.x);if(Math.abs(cr)<1)return null;if(sg&&Math.sign(cr)!==sg)return null;sg=Math.sign(cr);}
+ const d=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),top=d(q[0],q[1]),bot=d(q[3],q[2]),lef=d(q[0],q[3]),rig=d(q[1],q[2]);
+ if(Math.max(top,bot)/Math.min(top,bot)>1.35||Math.max(lef,rig)/Math.min(lef,rig)>1.35)return null;
+ const r=((top+bot)/2)/((lef+rig)/2),rg=gw/gh;if(r/rg<0.8||r/rg>1.25)return null;   // đúng tỉ lệ mẫu phiếu (chống nhận nhầm)
+ let ar=0;for(let i=0;i<4;i++){const a=q[i],b=q[(i+1)%4];ar+=a.x*b.y-b.x*a.y;}ar=Math.abs(ar)/2;if(ar<gw*gh*0.4)return null;
+ return q;
+}
+function liveHits(cands,GD){const used=new Set();return GD.pts.map(p=>{let best=null;for(const c of cands){if(used.has(c))continue;const side=Math.sqrt(c.a);if(side<GD.mk*0.66||side>GD.mk*2.6)continue;
+  if(Math.abs(c.x-p[0])>GD.box*0.6||Math.abs(c.y-p[1])>GD.box*0.6)continue;if(!best||c.a>best.a)best=c;}if(best)used.add(best);return best;});}
 let audioCtx=null;
 function tone(freqs,dur=0.12){try{if(!audioCtx)return;let t=audioCtx.currentTime;for(const f of freqs){const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.35,t+0.01);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g).connect(audioCtx.destination);o.start(t);o.stop(t+dur+0.02);t+=dur+0.05;}}catch(e){}}
 const buzz=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}};
@@ -1535,7 +1566,7 @@ async function startLive(e){
  const ov=document.createElement('div');ov.className='live';
  ov.innerHTML=`<video playsinline muted autoplay></video><canvas class="lov"></canvas>
   <div class="ltop"><span class="lst" id="lSt">Đang mở camera…</span><span class="lcnt" id="lCnt">${session.count} bài</span></div>
-  <div class="lbot"><div id="lRes" class="lres" hidden></div><button class="btn big" id="lStop">Dừng quét</button></div>`;
+  <div class="lbot"><div id="lRes" class="lres" hidden></div><div class="row" style="flex-wrap:nowrap"><button class="btn big grow" id="lStop">Dừng quét</button><button class="btn big pri grow" id="lShot">Chụp ngay</button></div></div>`;
  document.body.appendChild(ov);
  const video=ov.querySelector('video'),cv=ov.querySelector('.lov'),cx=cv.getContext('2d'),st=ov.querySelector('#lSt');
  video.srcObject=stream;try{await video.play();}catch(x){}
@@ -1546,6 +1577,7 @@ async function startLive(e){
  const flash=(t,cls,ms)=>{st.textContent=t;st.className='lst '+cls;msgUntil=performance.now()+ms;};
  const stop=async()=>{running=false;stream.getTracks().forEach(t=>t.stop());try{wake&&wake.release()}catch(x){}ov.remove();if($('#sOut')&&session.last)showScanResult(e,session.last);};
  ov.querySelector('#lStop').onclick=stop;
+ ov.querySelector('#lShot').onclick=()=>{if(!busy)capture(null);};
  const showRes=r=>{const el=ov.querySelector('#lRes');el.hidden=false;const crit=r.issues.filter(critical);
   el.innerHTML=`<div class="row"><div class="grow"><b>${esc(dn(r)||'SBD '+r.ans.sbd)}</b><div class="note num">SBD ${esc(r.ans.sbd)} · Mã đề ${esc(r.ans.made)}</div></div><div class="score" style="font-size:34px">${r.score?fmt(r.score.total):'–'}</div></div>${crit.length?`<div class="badbox">${crit.map(esc).join('<br>')}</div>`:''}${r.issues.filter(i=>!critical(i)).slice(0,3).map(i=>`<span class="pill warn">${esc(i)}</span>`).join(' ')}`;
   ov.querySelector('#lCnt').textContent=session.count+' bài';};
@@ -1555,7 +1587,7 @@ async function startLive(e){
   return{area,par:Math.max(top/bot,bot/top,lef/rig,rig/lef),asp};};
  const capture=async(hintN)=>{busy=true;flash('Đang chấm…','busyst',60000);tone([1800],0.04);{const fl=document.createElement('div');fl.className='lflash';ov.appendChild(fl);setTimeout(()=>fl.remove(),260);}await new Promise(r=>setTimeout(r,20));
   try{const vw=video.videoWidth,vh=video.videoHeight,k=Math.min(1,1600/Math.max(vw,vh)),full=document.createElement('canvas');full.width=Math.round(vw*k);full.height=Math.round(vh*k);full.getContext('2d').drawImage(video,0,0,full.width,full.height);
-   let A=analyzeCanvas(full,e,hintN?hintN.map(p=>[p[0]*full.width,p[1]*full.height]):null);if(A.error&&!A.quality&&hintN)A=analyzeCanvas(full,e);msgUntil=0;
+   let A=analyzeCanvas(full,e,hintN?hintN.map(p=>[p[0]*full.width,p[1]*full.height,p[2]*full.width]):null);if(A.error&&!A.quality&&hintN)A=analyzeCanvas(full,e);msgUntil=0;
    if(A.error&&!A.quality){msgUntil=0;stable=0;busy=false;return;}
    if(A.error){const now=performance.now();flash(A.error,'err',3500);if(now-lastErrTone>3000){tone([330,250],0.14);buzz([60,60,60]);lastErrTone=now;}coolUntil=now+1200;stable=0;busy=false;return;}
    const fp=fpOf(A.ans);
@@ -1569,27 +1601,25 @@ async function startLive(e){
   stable=0;busy=false;};
  // Khung ngắm kiểu QM: 4 khung xanh lớn ở 4 góc, mỗi khung tự tìm ô vuông đen nằm trong nó
  const F=lay(e.tpl).F,mkW=F.MK[1][0]-F.MK[0][0],mkH=F.MK[3][1]-F.MK[0][1];
- const guide=(W,H)=>{const r=mkW/mkH;let gw=W*0.86,gh=gw/r;if(gh>H*0.84){gh=H*0.84;gw=gh*r;}const x0=(W-gw)/2,y0=(H-gh)/2;
-  return{pts:[[x0,y0],[x0+gw,y0],[x0+gw,y0+gh],[x0,y0+gh]],gw,gh,box:Math.max(46,Math.min(gw,gh)*0.26),mk:gw*F.mks/mkW};};
+ const guide=(W,H)=>liveGuide(W,H,F,ov.clientWidth||W,ov.clientHeight||H);
  const drawGuide=(g,hit)=>{cx.save();g.pts.forEach((p,i)=>{const b=g.box,on=!!hit[i];cx.lineWidth=on?6:4;cx.strokeStyle=on?'#22ff66':'#16e05a';
-   cx.fillStyle=on?'rgba(34,255,102,.22)':'rgba(0,0,0,0)';cx.beginPath();cx.rect(p[0]-b/2,p[1]-b/2,b,b);cx.fill();cx.stroke();
+   const bx=(i===0||i===3)?p[0]-b*0.32:p[0]-b*0.68,by=i<2?p[1]-b*0.32:p[1]-b*0.68;
+   cx.fillStyle=on?'rgba(34,255,102,.22)':'rgba(0,0,0,0)';cx.beginPath();cx.rect(bx,by,b,b);cx.fill();cx.stroke();
    if(on){cx.fillStyle='#22ff66';cx.beginPath();cx.arc(hit[i].x,hit[i].y,5,0,7);cx.fill();}});cx.restore();};
- const pickInBox=(cands,p,b,mk)=>{let best=null,bd=1e9;for(const c of cands){const side=Math.sqrt(c.a);if(side<mk*0.35||side>mk*2.8)continue;
-   if(Math.abs(c.x-p[0])>b*0.58||Math.abs(c.y-p[1])>b*0.58)continue;const d=Math.hypot(c.x-p[0],c.y-p[1])+Math.abs(side-mk)*0.5;if(d<bd){bd=d;best=c;}}return best;};
  let lastHits=null;
  const tick=async()=>{if(!running)return;
   if(video.readyState>=2&&!busy){const vw=video.videoWidth,vh=video.videoHeight,W=480,H=Math.round(480*vh/vw);
    if(small.width!==W||small.height!==H){small.width=W;small.height=H;cv.width=W;cv.height=H;}
    sx.drawImage(video,0,0,W,H);const g=toGray(sx.getImageData(0,0,W,H).data);const cands=findMarkers(g,W,H,true)||[];
    cx.clearRect(0,0,W,H);const GD=guide(W,H);
-   const hit=GD.pts.map(p=>pickInBox(cands,p,GD.box,GD.mk));const n=hit.filter(Boolean).length;
+   let hit=liveHits(cands,GD),n=hit.filter(Boolean).length;if(n<4){const q=liveQuad(cands,GD);if(q){hit=q;n=4;}}
    const now=performance.now();
    if(n===4){
     const mv=lastHits?Math.max(...hit.map((c,i)=>Math.hypot(c.x-lastHits[i].x,c.y-lastHits[i].y))):1e9;lastHits=hit;
     stable=mv<W*0.035?stable+1:0;
     setSt(needLost?'Đã chấm phiếu này. Đặt phiếu tiếp theo vào khung.':'Giữ yên…');
     drawGuide(GD,hit);
-    if(stable>=1&&now>coolUntil&&(!needLost||now>recheckAt)){await capture(hit.map(c=>[c.x/W,c.y/H]));if(!running)return;}
+    if(stable>=1&&now>coolUntil&&(!needLost||now>recheckAt)){await capture(hit.map(c=>[c.x/W,c.y/H,Math.sqrt(c.a)/W]));if(!running)return;}
    }else{lastHits=null;stable=0;if(n===0){lost++;if(lost>=3)needLost=false;}else lost=0;
     setSt(n?`Đưa ô vuông đen ở góc phiếu vào khung xanh (${n}/4)`:'Đưa 4 ô vuông đen ở 4 góc phiếu vào 4 khung xanh');drawGuide(GD,hit);}
   }
@@ -1794,6 +1824,7 @@ V.settings=async()=>({title:'Cài đặt & sao lưu',html:`
  <div class="card"><h3>Độ nhạy nhận ô tô</h3><div class="note">Mức thấp hơn nhận cả ô tô nhạt (bút chì mờ). Mức cao hơn bỏ qua vết bẩn, dấu tẩy. Mặc định 35.</div>
  <div class="row"><input type="range" id="tR" min="20" max="60" step="1" value="${Math.round(settingT()*100)}" class="grow" style="accent-color:var(--accent)"><b class="num" id="tV" style="width:32px">${Math.round(settingT()*100)}</b></div>
  <div class="note">Thay đổi này áp dụng cho các bài quét sau.</div></div>
+ <div class="card"><h3>Phiên bản</h3><div class="note num">ChamthiQM · bản web ${BUILD}${window.AndroidBridge?' · trong app Android':''}</div></div>
  <div class="card"><h3>Sao lưu dữ liệu</h3><div class="note">Dữ liệu (bài kiểm tra, đáp án, lớp, ảnh bài làm) lưu trong bộ nhớ của trình duyệt trên máy này. Xóa dữ liệu trình duyệt sẽ mất hết, nên hãy sao lưu định kỳ hoặc sau mỗi đợt chấm.</div>
  <div class="row"><button class="btn pri grow" id="bk">${ICON.exp} Tải bản sao lưu</button><label class="btn grow" for="fBak" id="rs" role="button">Khôi phục từ bản sao lưu</label></div><div class="note" id="bkP"></div></div>`,
  after(){
@@ -1840,6 +1871,6 @@ V.guide=async()=>({title:'Hướng dẫn',html:`
 window.__ctUpdated=()=>{modal(`<h2>App vừa được cập nhật</h2><div class="note">Đã tải bản mới nhất của app ChamthiQM. Tải lại để dùng ngay, dữ liệu vẫn giữ nguyên.</div><div class="row" style="justify-content:flex-end"><button class="btn" data-m="x">Để sau</button><button class="btn pri" data-m="r">Tải lại</button></div>`,a=>{if(a==='r')location.reload();});};
 window.__ctBack=()=>{const lv=document.querySelector('.live');if(lv){const b=lv.querySelector('#lStop,#qStop');if(b)b.click();return true;}const md=document.querySelector('.modal');if(md){md.remove();return true;}if(S.stack.length>1){back();return true;}return false;};
 (async()=>{if(location.hash.startsWith('#kq=')){viewerBoot();return;}await DB.open();await loadAll();S.stack=[{v:'home',p:{}}];render();})();
-window.__ct={dbg:{findMarkers,toGray},TPLS,lay,drawSheet,analyzeCanvas,grade,eqAns,DB,loadAll,fontsReady};
+window.__ct={dbg:{findMarkers,toGray,liveGuide,liveHits,liveQuad},TPLS,lay,drawSheet,analyzeCanvas,grade,eqAns,DB,loadAll,fontsReady};
 </script>
 </body></html>
