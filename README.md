@@ -1,4 +1,4 @@
-# Chấm Thi THPT
+# ChamthiQM
 
 App chấm trắc nghiệm theo cấu trúc đề thi tốt nghiệp THPT từ 2025: quét phiếu bằng camera điện thoại, có điểm ngay, xuất bảng điểm Excel, mã QR đáp án và mã QR tra điểm cho học sinh.
 

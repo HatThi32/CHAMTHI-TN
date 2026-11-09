@@ -199,7 +199,7 @@ public class MainActivity extends Activity {
             try {
                 byte[] fresh = download(WEB_URL);
                 String head = new String(fresh, 0, Math.min(fresh.length, 4000), "UTF-8");
-                if (fresh.length > 100000 && head.contains("Chấm Thi") && !Arrays.equals(fresh, currentWeb())) {
+                if (fresh.length > 100000 && (head.contains("Chấm Thi") || head.contains("ChamthiQM")) && !Arrays.equals(fresh, currentWeb())) {
                     File dir = new File(getFilesDir(), "web");
                     dir.mkdirs();
                     File tmp = new File(dir, "index.html.tmp");
@@ -213,7 +213,7 @@ public class MainActivity extends Activity {
                 int mine = getPackageManager().getPackageInfo(getPackageName(), 0).versionCode;
                 if (latest > mine) runOnUiThread(() -> new AlertDialog.Builder(MainActivity.this)
                         .setTitle("Có bản cài đặt mới")
-                        .setMessage("Đã có app Chấm Thi bản " + latest + " (máy đang dùng bản " + mine + "). Tải về và cài đè lên, dữ liệu vẫn giữ nguyên.")
+                        .setMessage("Đã có app ChamthiQM bản " + latest + " (máy đang dùng bản " + mine + "). Tải về và cài đè lên, dữ liệu vẫn giữ nguyên.")
                         .setPositiveButton("Tải về", (d, w) -> {
                             try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(APK_URL))); } catch (Exception ignored) { }
                         })
