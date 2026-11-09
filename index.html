@@ -144,6 +144,8 @@ table.t th{font-size:11px;color:var(--brass);font-weight:700;text-transform:uppe
 .ltop{position:absolute;left:0;right:0;top:0;padding:calc(12px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));display:flex;gap:10px;align-items:flex-start;background:linear-gradient(rgba(0,0,0,.65),transparent)}
 .lst{flex:1;font-weight:650;font-size:16px;background:rgba(0,0,0,.55);padding:9px 13px;border-radius:12px}
 .lst.ok{background:#17603f}.lst.err{background:#a92a22}.lst.busyst{background:#16382D}
+.lflash{position:absolute;inset:0;background:#fff;opacity:.75;animation:lf .26s ease-out forwards;pointer-events:none}
+@keyframes lf{to{opacity:0}}
 .lcnt{background:rgba(255,255,255,.16);padding:9px 13px;border-radius:12px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
 .lbot{position:absolute;left:0;right:0;bottom:0;padding:12px max(16px,env(safe-area-inset-right,0px)) calc(14px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:10px;background:linear-gradient(transparent,rgba(0,0,0,.7))}
 .lres{background:var(--surface);color:var(--ink);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:6px}
@@ -1147,7 +1149,7 @@ const dn=r=>r.nameManual||r.name||r.nameAI||'';
 const dl=r=>r.lopManual||r.cls||r.lopAI||'';
 
 /* ---------- Màn hình một bài kiểm tra ---------- */
-V.exam=async(p)=>{
+V.exam=async(p)=>{window.__autoLive=true;
  const e=exById(p.id);if(!e)return{title:'Không tìm thấy',html:'<div class="empty">Bài kiểm tra đã bị xóa.</div>'};
  const rs=await DB.byExam(e.id),nk=Object.keys(e.keys).length,cl=exClsIds(e).map(clsById),P={id:e.id};
  return{title:e.name,act:`<button class="act" data-go="examForm" data-p='${esc(JSON.stringify(P))}'>Sửa</button>`,html:`
@@ -1455,13 +1457,14 @@ V.scan=async(p)=>{
  return{title:'Chấm bài · '+e.name,html:`
  ${!nk?'<div class="warnbox">Bài kiểm tra chưa có đáp án. Vẫn chụp được, bài sẽ tự có điểm khi bạn nhập đáp án.</div>':''}
  <button class="btn pri big" id="sLive">${ICON.cam} Bắt đầu tự động quét</button>
- <div class="note">Đưa camera lên phiếu: app tự căn 4 góc, tự chụp khi phiếu nằm ngay ngắn, chấm và lưu, rồi báo bằng tiếng bíp. Đổi sang phiếu tiếp theo là app quét tiếp, không cần bấm nút.</div>
+ <div class="note">Màn hình camera có 4 ô vuông trắng. Đưa điện thoại sao cho 4 ô vuông đen ở góc phiếu nằm trong 4 ô đó: ô nào khớp sẽ chuyển xanh, đủ 4 ô xanh là app tự chụp, chấm, lưu và bíp. Đổi sang phiếu tiếp theo là app quét tiếp, không cần bấm nút.</div>
  <div class="row"><label class="btn grow" for="fCam" id="sCam" role="button">${ICON.cam} Chụp từng phiếu</label><label class="btn grow" for="fGal" id="sGal" role="button">${ICON.img} Chọn ảnh có sẵn</label></div>
  <div id="sOut"></div>`,
  after(){
   $('#sCam').onclick=()=>pickFile('fCam',f=>scanFiles(e,f));
   $('#sGal').onclick=()=>pickFile('fGal',f=>scanFiles(e,f));
   $('#sLive').onclick=()=>startLive(e);
+  if(!(window.claude&&claude.use)&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.__autoLive){window.__autoLive=false;setTimeout(()=>{if($('#sLive'))startLive(e);},250);}
   if(session.last)showScanResult(e,session.last);
  }};
 };
@@ -1544,7 +1547,7 @@ async function startLive(e){
   let area=0;for(let i=0;i<4;i++){const a=m[i],b=m[(i+1)%4];area+=a[0]*b[1]-b[0]*a[1];}area=Math.abs(area)/2;
   const h=(top+bot)/2,v=(lef+rig)/2,asp=Math.max(h,v)/Math.min(h,v);
   return{area,par:Math.max(top/bot,bot/top,lef/rig,rig/lef),asp};};
- const capture=async()=>{busy=true;flash('Đang chấm…','busyst',60000);await new Promise(r=>setTimeout(r,20));
+ const capture=async()=>{busy=true;flash('Đang chấm…','busyst',60000);tone([1800],0.04);{const fl=document.createElement('div');fl.className='lflash';ov.appendChild(fl);setTimeout(()=>fl.remove(),260);}await new Promise(r=>setTimeout(r,20));
   try{const vw=video.videoWidth,vh=video.videoHeight,k=Math.min(1,2200/Math.max(vw,vh)),full=document.createElement('canvas');full.width=Math.round(vw*k);full.height=Math.round(vh*k);full.getContext('2d').drawImage(video,0,0,full.width,full.height);
    const A=analyzeCanvas(full,e);msgUntil=0;
    if(A.error&&!A.quality){msgUntil=0;stable=0;busy=false;return;}
@@ -1558,25 +1561,37 @@ async function startLive(e){
    showRes(res);
   }catch(err){flash('Lỗi khi chấm: '+err.message,'err',3000);}
   stable=0;busy=false;};
+ // Khung ngắm: 4 ô vuông đặt đúng vị trí 4 ô định vị của mẫu phiếu
+ const F=lay(e.tpl).F,mkW=F.MK[1][0]-F.MK[0][0],mkH=F.MK[3][1]-F.MK[0][1];
+ const guide=(W,H)=>{const r=mkW/mkH;let gw=W*0.84,gh=gw/r;if(gh>H*0.8){gh=H*0.8;gw=gh*r;}const x0=(W-gw)/2,y0=(H-gh)/2-H*0.02;
+  return{pts:[[x0,y0],[x0+gw,y0],[x0+gw,y0+gh],[x0,y0+gh]],gw,gh,box:Math.max(26,gw*0.13)};};
+ const drawGuide=(g,hit)=>{cx.save();cx.lineWidth=2;cx.setLineDash([8,8]);cx.strokeStyle='rgba(255,255,255,.45)';cx.strokeRect(g.pts[0][0],g.pts[0][1],g.gw,g.gh);cx.setLineDash([]);
+  g.pts.forEach((p,i)=>{const b=g.box,on=hit[i];cx.lineWidth=on?5:3.5;cx.strokeStyle=on?'#22c55e':'#ffffff';cx.fillStyle=on?'rgba(34,197,94,.28)':'rgba(255,255,255,.10)';
+   cx.beginPath();cx.roundRect?cx.roundRect(p[0]-b/2,p[1]-b/2,b,b,6):cx.rect(p[0]-b/2,p[1]-b/2,b,b);cx.fill();cx.stroke();});cx.restore();};
  const tick=async()=>{if(!running)return;
   if(video.readyState>=2&&!busy){const vw=video.videoWidth,vh=video.videoHeight,W=480,H=Math.round(480*vh/vw);
    if(small.width!==W||small.height!==H){small.width=W;small.height=H;cv.width=W;cv.height=H;}
    sx.drawImage(video,0,0,W,H);const g=toGray(sx.getImageData(0,0,W,H).data);const m=findMarkers(g,W,H);
-   cx.clearRect(0,0,W,H);
-   if(!m){lost++;stable=0;prev=null;if(lost>=2)needLost=false;setSt('Đưa cả phiếu vào khung, thấy đủ 4 ô vuông đen ở góc');}
-   else{lost=0;const G=geom(m);let ok=true,msg='';
-    if(G.area<W*H*0.22){ok=false;msg='Đưa điện thoại lại gần phiếu hơn';}
-    else if(G.par>1.22||G.asp<1.2||G.asp>1.85){ok=false;msg='Giữ điện thoại song song với mặt phiếu';}
+   cx.clearRect(0,0,W,H);const GD=guide(W,H);let hit=[false,false,false,false];
+   if(!m){lost++;stable=0;prev=null;if(lost>=2)needLost=false;setSt('Đưa 4 ô vuông đen ở góc phiếu vào 4 ô vuông trên màn hình');}
+   else{lost=0;
+    // ghép từng ô định vị với ô khung gần nhất (phiếu có thể xoay ngược)
+    const tol=GD.box*0.75;let best=null;
+    for(let r=0;r<4;r++){const mm=[0,1,2,3].map(i=>m[(i+r)%4]);const dsum=mm.reduce((a,p,i)=>a+Math.hypot(p[0]-GD.pts[i][0],p[1]-GD.pts[i][1]),0);if(!best||dsum<best.d)best={d:dsum,mm};}
+    hit=best.mm.map((p,i)=>Math.hypot(p[0]-GD.pts[i][0],p[1]-GD.pts[i][1])<=tol);
+    const n=hit.filter(Boolean).length;
+    const qa=(()=>{let a=0;for(let i=0;i<4;i++){const p=m[i],q=m[(i+1)%4];a+=p[0]*q[1]-q[0]*p[1];}return Math.abs(a)/2;})(),ga=GD.gw*GD.gh;
     const mv=prev?Math.max(...m.map((p,i)=>Math.hypot(p[0]-prev[i][0],p[1]-prev[i][1]))):1e9;prev=m;
-    if(ok){if(mv<W*0.015)stable++;else stable=1;if(!msg)msg=needLost?'Đã chấm phiếu này. Đặt phiếu tiếp theo vào khung.':'Giữ yên…';}else stable=0;
-    cx.lineWidth=4;cx.strokeStyle=ok?(stable>=3?'#22c55e':'#facc15'):'#f87171';cx.beginPath();m.forEach((p,i)=>i?cx.lineTo(p[0],p[1]):cx.moveTo(p[0],p[1]));cx.closePath();cx.stroke();
-    m.forEach(p=>{cx.fillStyle=cx.strokeStyle;cx.beginPath();cx.arc(p[0],p[1],7,0,7);cx.fill();});
+    let msg;
+    if(n===4){stable=mv<W*0.02?stable+1:1;msg=needLost?'Đã chấm phiếu này. Đặt phiếu tiếp theo vào khung.':'Giữ yên…';}
+    else{stable=0;msg=qa<ga*0.75?'Đưa điện thoại lại gần, cho 4 ô đen trùng 4 ô vuông':qa>ga*1.3?'Lùi điện thoại ra xa một chút':`Dịch phiếu cho 4 ô đen vào đúng 4 ô vuông (${n}/4)`;}
+    cx.fillStyle='#facc15';best.mm.forEach((p,i)=>{cx.beginPath();cx.arc(p[0],p[1],5,0,7);cx.fillStyle=hit[i]?'#22c55e':'#facc15';cx.fill();});
     setSt(msg);
     const now=performance.now();
-    if(ok&&stable>=4&&now>coolUntil&&(!needLost||now>recheckAt))await capture();}
+    if(n===4&&stable>=2&&now>coolUntil&&(!needLost||now>recheckAt)){drawGuide(GD,hit);await capture();if(!running)return;}}
+   drawGuide(GD,hit);
   }
-  if(running)setTimeout(tick,110);};
- video.addEventListener('loadedmetadata',()=>{},{once:true});
+  if(running)setTimeout(tick,90);};
  setTimeout(tick,300);
 }
 
