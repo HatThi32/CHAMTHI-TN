@@ -1058,6 +1058,8 @@ const titleCase=s=>s.toLocaleLowerCase('vi').replace(/(^|[\s(])(\p{L})/gu,(m,a,b
 function inspectKeyFile(sheets){
  let title=[];const counts=[0,0,0],made=new Set(),isM=c=>/^\d{3,4}$/.test(String(c).trim());
  for(const{rows}of sheets){
+  const QM=parseQMRows(rows);
+  if(QM){Object.keys(QM.keys).forEach(m=>made.add(m));QM.cnt.forEach((c,i)=>counts[i]=Math.max(counts[i],c));continue;}
   const hi=rows.findIndex(r=>nh(r[0])==='câu'&&r.slice(1).some(isM));
   if(hi>=0){if(!title.length)title=rows.slice(0,hi).map(r=>r.filter(x=>String(x).trim()).join(' ').trim()).filter(Boolean);
    rows[hi].slice(1).forEach(c=>{if(isM(c))made.add(String(c).trim());});let part=0;
@@ -1080,9 +1082,9 @@ function fromShufflerSheets(sheets,fname){
   const fits=id=>TPLS[id].p1>=n1&&TPLS[id].p2>=n2&&TPLS[id].p3>=n3;
   const tpl=sub&&fits(sub)?sub:!n3&&fits('tx')?'tx':'tong';
   if(!fits(tpl))throw new Error(`đề có ${n1}; ${n2}; ${n3} câu, vượt sức chứa mẫu phiếu lớn nhất (40; 8; 6).`);
-  let nm=(I.title[0]||file.name.replace(/\.[^.]+$/,'')).replace(/^B[ẢA]NG\s+Đ[ÁA]P\s+[ÁA]N\s*[–—-]?\s*/i,'').replace(/^MÔN\s+/i,'');
+  const fromFile=!I.title[0];let nm=(I.title[0]||file.name.replace(/\.[^.]+$/,'').replace(/[_]+/g,' ').replace(/^(d[aá]p\s*[aá]n|dap an)\s*/i,'').trim()).replace(/^B[ẢA]NG\s+Đ[ÁA]P\s+[ÁA]N\s*[–—-]?\s*/i,'').replace(/^MÔN\s+/i,'');
   const t2=(I.title[1]||'').normalize('NFC').toUpperCase(),mk=t2.match(/(GIỮA|CUỐI)\s*(HỌC\s*)?K[ỲÌY]\s*(\d|I{1,2})/);
-  nm=titleCase(nm)+(mk?' – '+titleCase(mk[1])+' kỳ '+mk[3].replace('II','2').replace('I','1'):(t2?' – '+titleCase(t2.split(/\s[–—-]\s/)[0]).slice(0,40):''));
+  nm=(fromFile?nm:titleCase(nm))+(mk?' – '+titleCase(mk[1])+' kỳ '+mk[3].replace('II','2').replace('I','1'):(t2?' – '+titleCase(t2.split(/\s[–—-]\s/)[0]).slice(0,40):''));
   const ml=I.made[0].length,tmp={n1,n2,n3,madeLen:ml},keys=parseKeySheets(tmp,sheets);
   let miss=0;for(const m in keys){const k=keys[m];miss+=k.p1.filter(x=>!x).length+k.p2.flat().filter(x=>x==null).length+k.p3.filter(x=>!x).length;}
   go('examForm',{pre:{file:file.name,name:nm.slice(0,80),tpl,n1,n2,n3,madeLen:ml,p3pt:sub==='toan'?0.5:0.25,keys,made:Object.keys(keys).sort(),miss}});
@@ -1236,10 +1238,32 @@ const partOf=s=>{const m=String(s).normalize('NFC').toUpperCase().match(/PH[ẦA
 const p1v=v=>{v=String(v??'').trim().toUpperCase();return /^[ABCD]$/.test(v)?v:'';};
 const p2v=v=>{v=String(v??'').normalize('NFC').toUpperCase().replace(/[^ĐDSTF]/g,'');return [0,1,2,3].map(s=>v[s]==null?null:'ĐDT'.includes(v[s]));};
 const p3v=v=>normAns(v);
+// Định dạng app QM: dòng tiêu đề "Đề/Câu | 1 | 2 | … | 1a | 1b | …", mỗi dòng sau là một mã đề
+function parseQMRows(rows){
+ const hi=rows.findIndex(r=>{const a=nh(r[0]);return(a.startsWith('đề')||a.startsWith('mãđề')||a==='made')&&r.slice(1).some(c=>/^\d+$/.test(String(c).trim()))&&!r.slice(1).some(c=>/^(câu|phần)/i.test(String(c).trim()));});
+ if(hi<0)return null;
+ const hd=rows[hi].map(c=>String(c).trim().toLowerCase().replace(/\s+/g,''));let seenP2=false;const col=[];
+ hd.forEach((c,i)=>{if(!i)return;let m;
+  if((m=c.match(/^(?:ii[.\-_]?)?(\d+)([abcd])$/))){seenP2=true;col[i]={p:2,q:+m[1],s:'abcd'.indexOf(m[2])};}
+  else if((m=c.match(/^(?:iii|tl|p3)[.\-_]?(\d+)$/)))col[i]={p:3,q:+m[1]};
+  else if((m=c.match(/^(?:i[.\-_])?(\d+)$/)))col[i]={p:seenP2?3:1,q:+m[1]};});
+ const out={},cnt=[0,0,0];
+ for(const r of rows.slice(hi+1)){const m=String(r[0]??'').trim();if(!/^\d{1,4}$/.test(m))continue;let any=false;const k={p1:{},p2:{},p3:{}};
+  col.forEach((c,i)=>{if(!c)return;const v=String(r[i]??'').trim();if(!v)return;any=true;
+   if(c.p===1){k.p1[c.q]=v;cnt[0]=Math.max(cnt[0],c.q);}else if(c.p===2){(k.p2[c.q]=k.p2[c.q]||[null,null,null,null])[c.s]=v;cnt[1]=Math.max(cnt[1],c.q);}else{k.p3[c.q]=v;cnt[2]=Math.max(cnt[2],c.q);}});
+  if(any)out[m]=k;}
+ return Object.keys(out).length?{keys:out,cnt}:null;
+}
 function parseKeySheets(e,sheets){
  const ml=e.madeLen||3,keys={},madeOk=m=>{m=String(m||'').trim();return /^\d+$/.test(m)&&m.length<=ml?m.padStart(ml,'0'):'';};
  const get=m=>keys[m]||(keys[m]=emptyKey(e));
  for(const{rows}of sheets){
+  const QM=parseQMRows(rows);
+  if(QM){for(const m0 in QM.keys){const m=madeOk(m0);if(!m)continue;const src=QM.keys[m0],k=get(m);
+    for(let i=0;i<e.n1;i++)if(src.p1[i+1]!=null)k.p1[i]=p1v(src.p1[i+1]);
+    for(let i=0;i<e.n2;i++)if(src.p2[i+1])k.p2[i]=src.p2[i+1].map(v=>v==null?null:p2v(v)[0]);
+    for(let i=0;i<e.n3;i++)if(src.p3[i+1]!=null)k.p3[i]=p3v(src.p3[i+1]);}
+   continue;}
   // Dạng bảng: dòng tiêu đề "Câu | 101 | 102 ...", các dòng PHẦN I/II/III chia phần
   const hi=rows.findIndex(r=>nh(r[0])==='câu'&&r.slice(1).some(c=>madeOk(c)));
   if(hi>=0){const cols=rows[hi].map((c,i)=>i>0&&madeOk(c)?[i,madeOk(c)]:null).filter(Boolean);let part=0;
