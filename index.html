@@ -103,6 +103,28 @@ input.in:focus,select.in:focus,textarea.in:focus{outline:2px solid var(--accent)
 .res .rs{text-align:right;display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted)}
 .res .rs .score{font-size:28px;margin-top:2px}
 .res .nm{grid-column:1/-1;font-size:13px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.res .pp{grid-column:1/-1;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.res .pp b{color:var(--ink);font-weight:700}.res .pp i{font-style:normal;color:var(--line2);margin:0 7px}
+.rnav{display:flex;align-items:center;justify-content:space-between;gap:10px}.rnav .btn{flex:1}.rnav span{font-size:14px;color:var(--muted);min-width:64px;text-align:center}
+.zoomin{position:relative;display:block;width:100%;padding:0;border:0;background:none;cursor:zoom-in}
+.zbadge{position:absolute;right:10px;bottom:10px;display:inline-flex;align-items:center;gap:6px;background:rgba(20,33,27,.82);color:#fff;font:600 13px var(--f);padding:7px 12px;border-radius:999px}
+.zbadge svg{width:16px;height:16px}
+.qd{gap:8px}.qh{font-weight:700;font-size:14px;margin-top:6px}
+.qg{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:6px}.qg.q3{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
+.qc{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;padding:5px 4px;border:1.5px solid;min-height:48px;line-height:1.15}
+.qc .n{font-size:11px;color:var(--muted)}.qc b{font-size:17px;font-family:var(--f);font-weight:800}.qc .k{font-size:11px;font-weight:700}
+.qc.g{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}.qc.r{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}.qc.w{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+.q2{display:flex;flex-direction:column;gap:6px}.q2r{display:grid;grid-template-columns:52px repeat(4,minmax(0,1fr)) auto;gap:6px;align-items:center}.q2r>.n{font-size:13px;font-weight:700}.q2r .pt{font-size:12px;color:var(--muted);white-space:nowrap}
+.qlg{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.qlg .qc{min-height:0;padding:3px 10px;flex-direction:row}.qlg .qc b{font-size:12px;font-weight:700}
+.zv{position:fixed;inset:0;z-index:50;background:#0b0f0d;display:flex;flex-direction:column;color:#fff;touch-action:none}
+.zt,.zf{display:flex;align-items:center;gap:8px;padding:10px max(12px,env(safe-area-inset-left,0px));padding-top:max(10px,env(safe-area-inset-top,0px))}
+.zf{padding-bottom:max(12px,env(safe-area-inset-bottom,0px));padding-top:10px;justify-content:space-between}
+.zt b{flex:1;font:700 17px var(--f);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zb{width:46px;height:46px;border-radius:50%;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);color:#fff;font:600 24px/1 var(--f);display:grid;place-items:center;cursor:pointer;flex:none}
+.zb:disabled{opacity:.3}.zb svg{width:22px;height:22px}
+.zh{font-size:13px;color:rgba(255,255,255,.7);text-align:center}
+.zs{flex:1;position:relative;overflow:hidden;display:grid;place-items:center;touch-action:none}
+.zs img{display:block;max-width:none;transform-origin:center center;user-select:none;-webkit-user-drag:none;pointer-events:none;will-change:transform}
 .sheetimg{width:100%;height:auto;border-radius:10px;border:1px solid var(--line);background:#fff;display:block}
 .kp{display:flex;flex-direction:column;gap:6px}
 .kq{display:flex;align-items:center;gap:6px}
@@ -957,7 +979,7 @@ function analyzeCanvas(cv,ex,hint){const wantTpl=ex?ex.tpl:null;
  L.p2.forEach((q,i)=>{if(!ex||i<ex.n2)q.forEach((r,j)=>chk(r,`Phần II câu ${i+1}${'abcd'[j]}`));});
  L.p3.forEach((q,i)=>{if(ex&&i>=ex.n3)return;for(let j=0;j<4;j++){const o=[];if(j===0)o.push(q.minus);if(q.comma[j])o.push(q.comma[j]);o.push(...q.digits[j]);chk(o,'Phần III câu '+(i+1));}});
  const flags=[];const uu=[...new Set(unsure)];
- const disp=warpRGB(id.data,w,h,H,4,F);
+ const disp=warpRGB(id.data,w,h,H,6,F);
  return{tplId,ans,offs,disp,flags,unsure:uu};
 }
 const unsureMsg=u=>`Chưa chắc chắn ở ${u.slice(0,6).join(', ')}${u.length>6?'… ('+u.length+' chỗ)':''}: ô tô mờ, tô chưa kín hoặc tẩy chưa sạch.`;
@@ -1029,9 +1051,9 @@ const need=(lib,n)=>{if(!window[lib]){toast('Chưa tải được thư viện '+
 /* ================= VẼ KẾT QUẢ LÊN ẢNH ================= */
 async function blobToImg(b){return new Promise((res,rej)=>{const u=URL.createObjectURL(b),im=new Image();im.onload=()=>{res(im);setTimeout(()=>URL.revokeObjectURL(u),1000)};im.onerror=rej;im.src=u;});}
 function drawOverlay(ctx,ex,res){
- const K=4,L=lay(ex.tpl),key=ex.keys[res.ans.made],a=res.ans,off=res.offs||[];
+ const L=lay(ex.tpl),K=ctx.canvas.width/L.F.W,key=ex.keys[res.ans.made],a=res.ans,off=res.offs||[];
  const P=b=>{const o=off[b.b]||[0,0];return[(b.x+o[0])*K,(b.y+o[1])*K]};
- const ring=(b,col,w=2.4)=>{const[x,y]=P(b);ctx.strokeStyle=col;ctx.lineWidth=w;ctx.beginPath();ctx.arc(x,y,RB*K*1.25,0,Math.PI*2);ctx.stroke();};
+ const ring=(b,col,w=2.4)=>{const[x,y]=P(b);ctx.strokeStyle=col;ctx.lineWidth=w*K/4;ctx.beginPath();ctx.arc(x,y,RB*K*1.25,0,Math.PI*2);ctx.stroke();};
  const G='#12a150',RD='#e02a20',YE='#e8b400',BL='#2a6ee0';
  L.made.forEach((c,j)=>{const d=parseInt((a.madeRaw||a.made)[j]);if(d>=0)ring(c[d],G,3);});
  L.sbd.forEach((c,j)=>{const d=parseInt(a.sbd[j]);if(d>=0)ring(c[d],G,3);});
@@ -1060,7 +1082,7 @@ function drawOverlay(ctx,ex,res){
 }
 async function renderGraded(ex,res){
  const rec=await DB.get('images',res.imgId);if(!rec)return null;const im=await blobToImg(rec.blob);
- const F=lay(ex.tpl).F,c=document.createElement('canvas');c.width=Math.round(F.W*4);c.height=Math.round(F.H*4);const ctx=c.getContext('2d');ctx.drawImage(im,0,0,c.width,c.height);drawOverlay(ctx,ex,res);return c;
+ const F=lay(ex.tpl).F,K=Math.max(4,Math.round(im.width/F.W)),c=document.createElement('canvas');c.width=Math.round(F.W*K);c.height=Math.round(F.H*K);const ctx=c.getContext('2d');ctx.drawImage(im,0,0,c.width,c.height);drawOverlay(ctx,ex,res);return c;
 }
 const canvasBlob=(c,t='image/jpeg',q=0.82)=>new Promise(r=>c.toBlob(r,t,q));
 
@@ -1465,7 +1487,7 @@ function showKeyQR(e){
 /* ---------- Mã QR tra điểm cho học sinh ---------- */
 function appBase(){try{const v=localStorage.getItem('ct_base');if(v)return v;}catch(e){}
  if(/^https?:$/.test(location.protocol)&&!/claude\.(ai|site|com)|claudeusercontent|androidplatform\.net|localhost/.test(location.hostname))return location.origin+location.pathname;return DEFAULT_BASE;}
-const BUILD='09/11/2026 21:28';
+const BUILD='09/11/2026 21:38';
 const DEFAULT_BASE='https://hatthi32.github.io/CHAMTHI-TN/';
 const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const unb64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
@@ -1567,7 +1589,7 @@ async function scanOne(e,file){
  return saveAnalysis(e,A);}
 async function saveAnalysis(e,A){
  const imgId=uid(),blob=await canvasBlob(A.disp,'image/jpeg',0.8);await DB.put('images',{id:imgId,blob});
- const cr=lay(A.tplId).F.crop,crop=document.createElement('canvas');crop.width=560;crop.height=Math.round(560*cr[3]/cr[2]);crop.getContext('2d').drawImage(A.disp,cr[0]*4,cr[1]*4,cr[2]*4,cr[3]*4,0,0,crop.width,crop.height);
+ const cr=lay(A.tplId).F.crop,crop=document.createElement('canvas');crop.width=560;crop.height=Math.round(560*cr[3]/cr[2]);{const kd=A.disp.width/lay(A.tplId).F.W;crop.getContext('2d').drawImage(A.disp,cr[0]*kd,cr[1]*kd,cr[2]*kd,cr[3]*kd,0,0,crop.width,crop.height);}
  const res={id:uid(),examId:e.id,time:Date.now(),timeStr:nowStr(),ans:A.ans,offs:A.offs,flags:A.flags||[],unsure:A.unsure||[],imgId,crop:crop.toDataURL('image/jpeg',0.75)};
  res.score=grade(e,res.ans);res.name=nameFor(e,res.ans.sbd);res.cls=(stuOf(e,res.ans.sbd)||{}).cls||'';const all=await DB.byExam(e.id);res.issues=issuesOf(e,res,all.concat([res]));
  await DB.put('results',res);
@@ -1718,15 +1740,65 @@ async function startLive(e){
 }
 
 /* ---------- Bài đã chấm ---------- */
+let resOrder={eid:null,ids:[]};
+const ZOOMI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M10.5 7.5v6M7.5 10.5h6"/></svg>';
+const partLine=(e,s)=>[e.n1?`P1 <b>${s.p1c}/${e.n1}</b> = ${fmt(s.s1)}`:'',e.n2?`P2 <b>${s.p2c.join('·')}</b> = ${fmt(s.s2)}`:'',e.n3?`P3 <b>${s.p3c}/${e.n3}</b> = ${fmt(s.s3)}`:''].filter(Boolean).join('<i>|</i>');
+// Bảng chi tiết từng câu: xanh = đúng, đỏ = sai (kèm đáp án đúng), vàng = bỏ trống / tô nhiều / chưa chắc
+function qDetail(e,r){const key=e.keys[r.ans.made];if(!key)return'';const a=r.ans,uns=new Set(r.unsure||[]);
+ const cls=(mk,ok,nm)=>uns.has(nm)||!mk||mk.length>1||mk.includes('?')?'w':ok?'g':'r';
+ const P2=v=>v==='D'?'Đ':v==='S'?'S':v?'?':'–';let h='';
+ if(e.n1){h+=`<div class="qh">Phần I · ${r.score?r.score.p1c:0}/${e.n1} câu đúng</div><div class="qg">`;
+  for(let i=0;i<e.n1;i++){const mk=a.p1[i]||'',k=key.p1[i]||'',c=cls(mk,mk===k,'Phần I câu '+(i+1));
+   h+=`<div class="qc ${c}"><span class="n">${i+1}</span><b>${esc(mk.length>1?mk.split('').join('+'):mk||'–')}</b>${c!=='g'?`<span class="k">ĐA ${esc(k)}</span>`:''}</div>`;}
+  h+='</div>';}
+ if(e.n2){h+=`<div class="qh">Phần II · ${r.score?r.score.p2c.reduce((x,y)=>x+y,0):0}/${e.n2*4} ý đúng</div><div class="q2">`;
+  for(let i=0;i<e.n2;i++){const kc=r.score?r.score.p2c[i]:0;h+=`<div class="q2r"><span class="n">Câu ${i+1}</span>`;
+   for(let j=0;j<4;j++){const kv=key.p2[i]?key.p2[i][j]:null;if(kv==null)continue;const mk=(a.p2[i]||[])[j]||'',kk=kv?'D':'S',c=cls(mk,mk===kk,`Phần II câu ${i+1}${'abcd'[j]}`);
+    h+=`<span class="qc ${c}"><span class="n">${'abcd'[j]}</span><b>${P2(mk.length>1?'?':mk)}</b>${c!=='g'?`<span class="k">ĐA ${P2(kk)}</span>`:''}</span>`;}
+   h+=`<span class="pt num">${kc}/4 · ${fmt(kc?p2of(e)[kc-1]:0)}đ</span></div>`;}
+  h+='</div>';}
+ if(e.n3){h+=`<div class="qh">Phần III · ${r.score?r.score.p3c:0}/${e.n3} câu đúng</div><div class="qg q3">`;
+  for(let i=0;i<e.n3;i++){const mk=a.p3[i]||'',k=normAns(key.p3[i]||''),c=uns.has('Phần III câu '+(i+1))||!mk||mk.includes('?')?'w':eqAns(mk,k)?'g':'r';
+   h+=`<div class="qc ${c}"><span class="n">${i+1}</span><b>${esc(mk||'–')}</b>${c!=='g'?`<span class="k">ĐA ${esc(k)}</span>`:''}</div>`;}
+  h+='</div>';}
+ return`<div class="card qd"><div class="lbl">Chi tiết từng câu</div>${h}<div class="qlg"><span class="qc g"><b>Đúng</b></span><span class="qc r"><b>Sai</b></span><span class="qc w"><b>Bỏ trống · tô 2 ô · tô mờ</b></span></div></div>`;}
+// Xem ảnh toàn màn hình: chụm hai ngón để phóng to, kéo để di chuyển, chạm đúp để phóng nhanh
+function openZoom(canvas,title,nav){
+ const ov=document.createElement('div');ov.className='zv';ov.setAttribute('role','dialog');ov.setAttribute('aria-label','Ảnh bài làm phóng to');
+ ov.innerHTML=`<div class="zt"><button class="zb" data-z="x" aria-label="Đóng"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button><b>${esc(title)}</b>${nav?`<button class="zb" data-z="p" aria-label="Bài trước"${nav.prev?'':' disabled'}>‹</button><button class="zb" data-z="n" aria-label="Bài sau"${nav.next?'':' disabled'}>›</button>`:''}</div>
+  <div class="zs"><img alt="Ảnh bài làm đã chấm"></div><div class="zf"><button class="zb" data-z="-" aria-label="Thu nhỏ">−</button><span class="zh">Chụm 2 ngón để phóng to · chạm đúp để phóng nhanh</span><button class="zb" data-z="+" aria-label="Phóng to">+</button></div>`;
+ document.body.appendChild(ov);const st=ov.querySelector('.zs'),img=ov.querySelector('img');
+ let url=null;canvas.toBlob(b=>{url=URL.createObjectURL(b);img.src=url;},'image/jpeg',0.92);
+ let s=1,tx=0,ty=0,base=1;const pts=new Map();let pinch=null,last=0,drag=null;
+ const fit=()=>{const r=st.getBoundingClientRect();base=Math.min(r.width/canvas.width,r.height/canvas.height);};
+ const clamp=()=>{const r=st.getBoundingClientRect(),w=canvas.width*base*s,h=canvas.height*base*s;const mx=Math.max(0,(w-r.width)/2),my=Math.max(0,(h-r.height)/2);tx=Math.max(-mx,Math.min(mx,tx));ty=Math.max(-my,Math.min(my,ty));};
+ const apply=()=>{clamp();img.style.width=canvas.width*base+'px';img.style.transform=`translate(${tx}px,${ty}px) scale(${s})`;};
+ const zoomAt=(ns,cx,cy)=>{ns=Math.max(1,Math.min(6,ns));const r=st.getBoundingClientRect(),px=cx-r.left-r.width/2,py=cy-r.top-r.height/2;tx=px-(px-tx)*ns/s;ty=py-(py-ty)*ns/s;s=ns;apply();};
+ fit();apply();const onR=()=>{fit();apply();};window.addEventListener('resize',onR);
+ st.addEventListener('pointerdown',ev=>{st.setPointerCapture(ev.pointerId);pts.set(ev.pointerId,[ev.clientX,ev.clientY]);
+  if(pts.size===2){const[a,b]=[...pts.values()];pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1]),s,cx:(a[0]+b[0])/2,cy:(a[1]+b[1])/2};drag=null;}
+  else{const now=Date.now();if(now-last<300){zoomAt(s>1.2?1:2.6,ev.clientX,ev.clientY);if(s===1){tx=ty=0;apply();}last=0;}else last=now;drag={x:ev.clientX,y:ev.clientY,tx,ty};}});
+ st.addEventListener('pointermove',ev=>{if(!pts.has(ev.pointerId))return;pts.set(ev.pointerId,[ev.clientX,ev.clientY]);
+  if(pinch&&pts.size===2){const[a,b]=[...pts.values()];const d=Math.hypot(a[0]-b[0],a[1]-b[1]);zoomAt(pinch.s*d/pinch.d,(a[0]+b[0])/2,(a[1]+b[1])/2);}
+  else if(drag){tx=drag.tx+ev.clientX-drag.x;ty=drag.ty+ev.clientY-drag.y;apply();}});
+ const up=ev=>{pts.delete(ev.pointerId);if(pts.size<2)pinch=null;if(!pts.size){if(drag&&s===1&&nav){const dx=ev.clientX-drag.x;if(Math.abs(dx)>70&&Math.abs(ev.clientY-drag.y)<60){go2(dx<0?'n':'p');}}drag=null;}else{const[p]=[...pts.values()];drag={x:p[0],y:p[1],tx,ty};}};
+ st.addEventListener('pointerup',up);st.addEventListener('pointercancel',up);
+ st.addEventListener('wheel',ev=>{ev.preventDefault();zoomAt(s*(ev.deltaY<0?1.2:1/1.2),ev.clientX,ev.clientY);},{passive:false});
+ const close=()=>{window.removeEventListener('resize',onR);window.__ctBackHook=null;ov.remove();if(url)URL.revokeObjectURL(url);};
+ const go2=d=>{const f=d==='n'?nav&&nav.next:nav&&nav.prev;if(f){close();f();}};
+ window.__ctBackHook=()=>{close();return true;};const onK=ev=>{if(!document.body.contains(ov)){document.removeEventListener('keydown',onK);return;}if(ev.key==='Escape')close();else if(ev.key==='ArrowRight')go2('n');else if(ev.key==='ArrowLeft')go2('p');};document.addEventListener('keydown',onK);
+ ov.addEventListener('click',ev=>{const b=ev.target.closest('[data-z]');if(!b)return;const z=b.dataset.z,r=st.getBoundingClientRect();
+  if(z==='x')close();else if(z==='+')zoomAt(s*1.5,r.left+r.width/2,r.top+r.height/2);else if(z==='-'){zoomAt(s/1.5,r.left+r.width/2,r.top+r.height/2);}else go2(z);});
+ return close;}
 V.results=async(p)=>{
  const e=exById(p.id);let rs=await DB.byExam(e.id);
  const f=p.f||'all',so=p.so||'new',mades=[...new Set(rs.map(r=>r.ans.made))].sort();
  if(f==='issue')rs=rs.filter(r=>r.issues.length||!r.score);else if(f!=='all')rs=rs.filter(r=>r.ans.made===f);
  const sorts={new:(a,b)=>b.time-a.time,sbd:(a,b)=>a.ans.sbd.localeCompare(b.ans.sbd),hi:(a,b)=>(b.score?b.score.total:-1)-(a.score?a.score.total:-1),lo:(a,b)=>(a.score?a.score.total:99)-(b.score?b.score.total:99)};
- rs.sort(sorts[so]);
+ rs.sort(sorts[so]);resOrder={eid:e.id,ids:rs.map(r=>r.id)};
  const rows=rs.map(r=>`<button class="res" data-go="result" data-p='${esc(JSON.stringify({id:e.id,rid:r.id}))}'>
   <img src="${r.crop}" alt="Phần họ tên trên phiếu SBD ${esc(sbdTxt(r))}"><span class="rs"><span class="num">SBD ${esc(sbdTxt(r))}</span><span class="num">Mã đề ${esc(r.ans.made)}</span><span class="score">${r.score?fmt(r.score.total):'–'}</span></span>
-  <span class="nm">${dn(r)?`<b style="color:var(--ink)">${esc(dn(r))}</b>${!r.name&&!r.nameManual&&r.nameAI?'<span class="pill">AI đọc</span>':''}`:''}${dl(r)?`<span class="pill">${esc(dl(r))}</span>`:''}${r.issues.map(i=>`<span class="pill ${critical(i)?'bad':'warn'}">${esc(i)}</span>`).join('')}</span></button>`).join('');
+  ${r.score?`<span class="pp num">${partLine(e,r.score)}</span>`:''}<span class="nm">${dn(r)?`<b style="color:var(--ink)">${esc(dn(r))}</b>${!r.name&&!r.nameManual&&r.nameAI?'<span class="pill">AI đọc</span>':''}`:''}${dl(r)?`<span class="pill">${esc(dl(r))}</span>`:''}${r.issues.map(i=>`<span class="pill ${critical(i)?'bad':'warn'}">${esc(i)}</span>`).join('')}</span></button>`).join('');
  const P=x=>esc(JSON.stringify({...p,...x}));
  return{title:'Bài đã chấm · '+e.name,html:`
  <div class="row"><label class="f grow">Lọc<select class="in" id="rF"><option value="all">Tất cả</option><option value="issue"${f==='issue'?' selected':''}>Cần kiểm tra</option>${mades.map(m=>`<option value="${esc(m)}"${f===m?' selected':''}>Mã đề ${esc(m)}</option>`).join('')}</select></label>
@@ -1737,11 +1809,14 @@ V.results=async(p)=>{
 };
 V.result=async(p)=>{
  const e=exById(p.id),r=await DB.get('results',p.rid);if(!r)return{title:'Không tìm thấy',html:'<div class="empty">Bài này đã bị xóa.</div>'};
+ const ord=resOrder.eid===e.id?resOrder.ids:[],ix=ord.indexOf(r.id),prevId=ix>0?ord[ix-1]:null,nextId=ix>=0&&ix<ord.length-1?ord[ix+1]:null;
  return{title:dn(r)||'SBD '+sbdTxt(r),act:`<button class="act" id="rShare">Lưu ảnh</button>`,html:`
+ ${ix>=0&&ord.length>1?`<div class="rnav"><button class="btn" id="rPrev"${prevId?'':' disabled'}>‹ Bài trước</button><span class="num">${ix+1} / ${ord.length}</span><button class="btn" id="rNext"${nextId?'':' disabled'}>Bài sau ›</button></div>`:''}
  <div class="card"><div class="row"><div class="grow"><h3>${esc(dn(r)||'Chưa rõ tên')}</h3><div class="meta num"><span>${esc(r.timeStr)}</span></div></div><div class="score" style="font-size:44px">${r.score?fmt(r.score.total):'–'}</div></div>
  ${scoreBlock(e,r)}${issueHtml(r)}</div>
- <canvas id="rImg" class="sheetimg" width="840" height="1188"></canvas>
- <div class="note">Mỗi câu khoanh một vòng tại đáp án đúng. Xanh lá: tô đúng · Đỏ: tô sai · Vàng: bỏ trống, tô nhiều ô hoặc tô mờ Mã đề và SBD máy đọc được khoanh xanh lá.</div>
+ <button class="zoomin" id="rZoom" aria-label="Phóng to ảnh bài làm"><canvas id="rImg" class="sheetimg" width="840" height="1188"></canvas><span class="zbadge">${ZOOMI} Chạm để phóng to</span></button>
+ ${qDetail(e,r)}
+ <div class="note">Trên ảnh, mỗi câu khoanh một vòng tại đáp án đúng. Xanh lá: tô đúng · Đỏ: tô sai · Vàng: bỏ trống, tô nhiều ô hoặc tô mờ Mã đề và SBD máy đọc được khoanh xanh lá.</div>
  <div class="lbl">Sửa thông tin máy đọc</div>
  <div class="grid2"><label class="f">Họ và tên${!r.name&&!r.nameManual&&r.nameAI?' (AI đọc)':''}<input class="in" id="rName" value="${esc(dn(r))}" placeholder="${r.name?'':'Nhập tay nếu chưa có'}"></label><label class="f">Lớp<input class="in" id="rLop" value="${esc(dl(r))}" maxlength="20"></label></div>
  <div class="grid2"><label class="f">Số báo danh<input class="in num" id="rSbd" value="${esc(/^\d+$/.test(r.ans.sbd)?r.ans.sbd:'')}" placeholder="Bỏ trống nếu không dùng SBD" inputmode="numeric" maxlength="6"></label><label class="f">Mã đề<input class="in num" id="rMade" value="${esc(r.ans.made)}" inputmode="numeric" maxlength="${e.madeLen||3}"></label></div>
@@ -1749,6 +1824,11 @@ V.result=async(p)=>{
  <button class="btn danger" id="rDel">Xóa bài này</button>`,
  async after(){
   const c=await renderGraded(e,r);const t=$('#rImg');if(c&&t){t.width=c.width;t.height=c.height;t.getContext('2d').drawImage(c,0,0);}
+  const toR=id=>()=>replace('result',{id:e.id,rid:id});
+  if($('#rPrev'))$('#rPrev').onclick=toR(prevId);if($('#rNext'))$('#rNext').onclick=toR(nextId);
+  const zoomNav=()=>({prev:prevId?()=>{replace('result',{id:e.id,rid:prevId,zoom:1});}:null,next:nextId?()=>{replace('result',{id:e.id,rid:nextId,zoom:1});}:null});
+  $('#rZoom').onclick=()=>{if(c)openZoom(c,(dn(r)||'SBD '+sbdTxt(r))+' · '+(r.score?fmt(r.score.total)+' điểm':'chưa chấm'),zoomNav());};
+  if(p.zoom&&c)openZoom(c,(dn(r)||'SBD '+sbdTxt(r))+' · '+(r.score?fmt(r.score.total)+' điểm':'chưa chấm'),zoomNav());
   $('#rShare').onclick=async()=>{const c2=await renderGraded(e,r);if(c2)saveFile(safeName((r.ans.sbd)+'_'+(dn(r)||'hoc-sinh'))+'.jpg',await canvasBlob(c2,'image/jpeg',0.88));};
   $('#rSave').onclick=async()=>{let sb=$('#rSbd').value.trim().replace(/_/g,''),md=$('#rMade').value.trim();const ml=e.madeLen||3;if(!sb)sb='______';else if(!/^\d{1,6}$/.test(sb)){toast('SBD chỉ gồm chữ số');return;}else sb=sb.padStart(6,'0');if(!new RegExp('^\\d{'+ml+'}$').test(md)){toast('Mã đề gồm '+ml+' chữ số');return;}
    if(md!==r.ans.made)r.ans.madeEdited=true;{const nm=$('#rName').value.trim(),lp=$('#rLop').value.trim();r.nameManual=nm&&nm!==(r.name||r.nameAI)?nm:'';r.lopManual=lp&&lp!==(r.cls||r.lopAI)?lp:'';}r.ans.sbd=sb;r.ans.made=md;r.score=grade(e,r.ans);r.name=nameFor(e,sb);r.cls=(stuOf(e,sb)||{}).cls||'';await DB.put('results',r);const all=await DB.byExam(e.id);for(const o of all){o.issues=issuesOf(e,o,all);await DB.put('results',o);}render();toast('Đã chấm lại');};
@@ -1960,7 +2040,7 @@ V.guide=async()=>({title:'Hướng dẫn',html:`
 
 /* ================= KHỞI ĐỘNG ================= */
 window.__ctUpdated=()=>{modal(`<h2>App vừa được cập nhật</h2><div class="note">Đã tải bản mới nhất của app ChamthiQM. Tải lại để dùng ngay, dữ liệu vẫn giữ nguyên.</div><div class="row" style="justify-content:flex-end"><button class="btn" data-m="x">Để sau</button><button class="btn pri" data-m="r">Tải lại</button></div>`,a=>{if(a==='r')location.reload();});};
-window.__ctBack=()=>{const lv=document.querySelector('.live');if(lv){const b=lv.querySelector('#lStop,#qStop');if(b)b.click();return true;}const md=document.querySelector('.modal');if(md){md.remove();return true;}if(S.stack.length>1){back();return true;}return false;};
+window.__ctBack=()=>{if(window.__ctBackHook&&window.__ctBackHook())return true;const lv=document.querySelector('.live');if(lv){const b=lv.querySelector('#lStop,#qStop');if(b)b.click();return true;}const md=document.querySelector('.modal');if(md){md.remove();return true;}if(S.stack.length>1){back();return true;}return false;};
 (async()=>{if(location.hash.startsWith('#kq=')){viewerBoot();return;}await DB.open();await loadAll();S.stack=[{v:'home',p:{}}];render();})();
 window.__ct={dbg:{readFills,findMarkers,markerQuads,homography,readCode,warpGray,FMT,toGray,liveGuide,liveHits,liveQuad,deriveMade,issuesOf,drawOverlay},TPLS,lay,drawSheet,analyzeCanvas,grade,eqAns,DB,loadAll,fontsReady};
 </script>
