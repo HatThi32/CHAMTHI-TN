@@ -939,11 +939,13 @@ function deriveMade(raw,len,keys){raw=String(raw||'');if(len>=raw.length)return 
 function analyzeCanvas(cv,ex,hint){const wantTpl=ex?ex.tpl:null;
  const w=cv.width,h=cv.height,ctx=cv.getContext('2d',{willReadFrequently:true}),id=ctx.getImageData(0,0,w,h),g=toGray(id.data);
  const m0=hint?refineMarkers(g,w,h,hint):findMarkers(g,w,h);
- const quads=m0?[m0]:[];for(const q of markerQuads(g,w,h))quads.push(q);
- if(!quads.length)return{error:'Không thấy đủ 4 ô vuông đen ở 4 góc phiếu. Chụp thẳng từ trên xuống, để lọt cả 4 góc và đặt phiếu trên nền phẳng.'};
+ // tính thêm các bộ 4 ô dự phòng chỉ khi bộ đầu tiên không khớp (tiết kiệm thời gian khi quét liên tục)
+ let mq=null;const MQ=()=>mq||(mq=markerQuads(g,w,h));
+ const quads=function*(){if(m0)yield m0;for(const q of MQ())yield q;};
+ if(!m0&&!MQ().length)return{error:'Không thấy đủ 4 ô vuông đen ở 4 góc phiếu. Chụp thẳng từ trên xuống, để lọt cả 4 góc và đặt phiếu trên nền phẳng.'};
  let H=null,code=-1;
  let F=null;
- outer:for(const m of quads)for(const FF of [FMT.a4,FMT.a5])for(let r=0;r<4;r++){const dst=[0,1,2,3].map(i=>m[(i+r)%4]);const Hm=homography(FF.MK,dst);if(!Hm)continue;const c=readCode(g,w,h,Hm,FF);if(c>0){H=Hm;code=c;F=FF;break outer;}}
+ outer:for(const m of quads())for(const FF of [FMT.a4,FMT.a5])for(let r=0;r<4;r++){const dst=[0,1,2,3].map(i=>m[(i+r)%4]);const Hm=homography(FF.MK,dst);if(!Hm)continue;const c=readCode(g,w,h,Hm,FF);if(c>0){H=Hm;code=c;F=FF;break outer;}}
  if(!H)return{error:'Không đọc được ô mã mẫu phiếu ở cạnh dưới phiếu. Kiểm tra cạnh dưới có bị ngón tay che, bị lóa đèn không; phiếu nửa trang phải cắt rời trước khi quét.'};
  const tplId=TPL_IDS.find(id=>TPLS[id].code===code);
  if(wantTpl&&tplId!==wantTpl)return{error:`Đây là phiếu mẫu ${code} (${TPLS[tplId].short}), nhưng bài kiểm tra này dùng mẫu ${TPLS[wantTpl].code} (${TPLS[wantTpl].short}).`};
@@ -1487,7 +1489,7 @@ function showKeyQR(e){
 /* ---------- Mã QR tra điểm cho học sinh ---------- */
 function appBase(){try{const v=localStorage.getItem('ct_base');if(v)return v;}catch(e){}
  if(/^https?:$/.test(location.protocol)&&!/claude\.(ai|site|com)|claudeusercontent|androidplatform\.net|localhost/.test(location.hostname))return location.origin+location.pathname;return DEFAULT_BASE;}
-const BUILD='09/11/2026 21:38';
+const BUILD='10/11/2026 20:34';
 const DEFAULT_BASE='https://hatthi32.github.io/CHAMTHI-TN/';
 const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const unb64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
@@ -1655,6 +1657,7 @@ function liveUnavailable(err){
 }
 const fpOf=a=>[a.made,a.sbd,a.p1.join(','),a.p2.map(q=>q.join('')).join(','),a.p3.join(',')].join('|');
 async function startLive(e){
+ if(document.querySelector('.live'))return;
  try{if(!audioCtx){const AC=window.AudioContext||window.webkitAudioContext;if(AC)audioCtx=new AC();}if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();}catch(x){}
  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)return liveUnavailable();
  let stream;
@@ -1690,7 +1693,7 @@ async function startLive(e){
    if(A.error){pendFp=null;const now=performance.now();flash(A.error,'err',3500);if(now-lastErrTone>3000){tone([330,250],0.14);buzz([60,60,60]);lastErrTone=now;}coolUntil=now+1200;stable=0;busy=false;return;}
    const fp=fpOf(A.ans);
    session.fps=session.fps||new Set();
-   if((needLost&&fp===lastFp)||session.fps.has(fp)){recheckAt=performance.now()+1500;pendFp=null;flash('Phiếu này đã chấm. Đặt phiếu tiếp theo vào khung.','ok',1600);busy=false;return;}
+   if((needLost&&fp===lastFp)||session.fps.has(fp)){recheckAt=performance.now()+900;pendFp=null;flash(fp===lastFp?'Phiếu này vừa chấm xong. Đặt phiếu tiếp theo vào khung.':`Phiếu này đã chấm trong lượt này (SBD ${A.ans.sbd&&!/_/.test(A.ans.sbd)?A.ans.sbd:'trống'}, mã đề ${A.ans.made}). Đặt phiếu khác vào khung.`,'ok',1200);busy=false;return;}
    const now2=performance.now();
    // Ô lưng chừng: không tự cho điểm
    if(A.unsure.length&&!force){pendFp=null;unsureTries++;
@@ -1704,7 +1707,7 @@ async function startLive(e){
    agreeTries=0;pendFp=null;
    if(force&&A.unsure.length)A.flags.push('Cần kiểm tra: '+A.unsure.slice(0,8).join(', '));
    tone([1800],0.04);{const fl=document.createElement('div');fl.className='lflash';ov.appendChild(fl);setTimeout(()=>fl.remove(),260);}
-   const {res}=await saveAnalysis(e,A);session.fps.add(fp);session.count++;session.last=res;lastFp=fp;needLost=true;recheckAt=performance.now()+1800;
+   const {res}=await saveAnalysis(e,A);session.fps.add(fp);session.count++;session.last=res;lastFp=fp;needLost=true;recheckAt=performance.now()+1200;
    const crit=res.issues.some(critical);
    if(crit){tone([440,300,440],0.15);buzz([200,80,200]);flash('Đã lưu nhưng mã đề có vấn đề, xem thông báo bên dưới.','err',3000);}
    else{tone([880,1320],0.1);buzz(80);flash(`Đã chấm: ${res.score?fmt(res.score.total)+' điểm':'chưa có đáp án'}. Đặt phiếu tiếp theo.`,'ok',2200);}
@@ -1729,7 +1732,7 @@ async function startLive(e){
    if(n===4){
     const mv=lastHits?Math.max(...hit.map((c,i)=>Math.hypot(c.x-lastHits[i].x,c.y-lastHits[i].y))):1e9;lastHits=hit;
     stable=mv<W*0.035?stable+1:0;
-    setSt(needLost?'Đã chấm phiếu này. Đặt phiếu tiếp theo vào khung.':'Giữ yên…');
+    setSt(needLost&&now<recheckAt?'Đã chấm xong. Đổi sang phiếu tiếp theo.':'Giữ yên…');
     drawGuide(GD,hit);
     if(stable>=1&&now>coolUntil&&(!needLost||now>recheckAt)){await capture(hit.map(c=>[c.x/W,c.y/H,Math.sqrt(c.a)/W]));if(!running)return;}
    }else{lastHits=null;stable=0;if(n===0){lost++;if(lost>=3)needLost=false;}else lost=0;
