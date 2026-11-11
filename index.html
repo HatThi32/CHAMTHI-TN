@@ -142,6 +142,7 @@ input.in:focus,select.in:focus,textarea.in:focus{outline:2px solid var(--accent)
 .ecard .eh .em{font-size:15px;color:var(--muted)}.ecard .eh .em strong{color:var(--ink)}.ecard .eh .em i{color:var(--warn);font-style:normal;font-weight:700}
 .ea{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 16px}.ea .btn{min-height:54px;font-size:17.5px;border-radius:14px;white-space:nowrap;padding:10px 12px}.ea .btn svg{width:22px;height:22px}
 .ea.big{padding:0}.ea.big .btn{min-height:62px;font-size:19px}
+.sc10n{background:var(--brass-soft);border-radius:10px;padding:10px 12px;color:var(--ink)}
 .sheetimg{width:100%;height:auto;border-radius:10px;border:1px solid var(--line);background:#fff;display:block}
 .kp{display:flex;flex-direction:column;gap:6px}
 .kq{display:flex;align-items:center;gap:6px}
@@ -1063,8 +1064,11 @@ function grade(ex,ans){
  let p3c=0;for(let i=0;i<ex.n3;i++)if(eqAns(ans.p3[i],key.p3[i]))p3c++;
  const s1=p1c*ex.p1pt,s3=p3c*ex.p3pt;let total=s1+s2+s3;const max=examMax(ex);
  if(ex.scale10&&max>0)total=total*10/max;
- return{p1c,s1:r2(s1),p2c,s2:r2(s2),p3c,s3:r2(s3),total:r2(total),max:r2(max)};
+ return{p1c,s1:r2(s1),p2c,s2:r2(s2),p3c,s3:r2(s3),raw:r2(s1+s2+s3),total:r2(total),max:r2(max)};
 }
+// Điểm cộng các phần; nếu bài kiểm tra chọn "Quy đổi về thang điểm 10" thì ghi rõ phép quy đổi
+const rawOf=s=>s.raw!=null?s.raw:r2((s.s1||0)+(s.s2||0)+(s.s3||0));
+const scaledNote=(e,s)=>e.scale10?`${fmt(rawOf(s))}/${fmt(examMax(e))} điểm, quy về thang 10 = ${fmt(rawOf(s))} × 10 ÷ ${fmt(examMax(e))}`:'';
 function issuesOf(ex,res,all){
  const w=[],a=res.ans;
  if(/_/.test(a.made))w.push('Mã đề tô thiếu chữ số');
@@ -1141,7 +1145,7 @@ function drawOverlay(ctx,ex,res){
  ctx.fillStyle='#d01c14';ctx.font=`700 ${3.6*K}px "Plus Jakarta Sans",Arial,sans-serif`;ctx.textAlign='left';ctx.textBaseline='middle';
  let line;
  if(!sc)line='Chưa chấm: '+(key?'':'chưa có đáp án mã đề '+a.made);
- else{const parts=[];if(ex.n1)parts.push(`P1: ${sc.p1c}/${ex.n1} = ${fmt2(sc.s1)}`);if(ex.n2)parts.push(`P2: ${sc.p2c.map(k=>k+'/4').join('; ')} = ${fmt2(sc.s2)}`);if(ex.n3)parts.push(`P3: ${sc.p3c}/${ex.n3} = ${fmt2(sc.s3)}`);parts.push(`Tổng: ${fmt2(sc.total)}`);line=parts.join('  |  ');}
+ else{const parts=[];if(ex.n1)parts.push(`P1: ${sc.p1c}/${ex.n1} = ${fmt2(sc.s1)}`);if(ex.n2)parts.push(`P2: ${sc.p2c.map(k=>k+'/4').join('; ')} = ${fmt2(sc.s2)}`);if(ex.n3)parts.push(`P3: ${sc.p3c}/${ex.n3} = ${fmt2(sc.s3)}`);parts.push(ex.scale10?`Cộng: ${fmt2(rawOf(sc))}/${fmt2(examMax(ex))} → thang 10: ${fmt2(sc.total)}`:`Tổng: ${fmt2(sc.total)}`);line=parts.join('  |  ');}
  let fs=3.6;while(ctx.measureText(line).width>205*K&&fs>2){fs-=0.2;ctx.font=`700 ${fs*K}px "Plus Jakarta Sans",Arial,sans-serif`;}
  ctx.fillText(line,2.5*K,(L.F.id==='a5'?3.5:5)*K);
 }
@@ -1324,7 +1328,7 @@ V.exam=async(p)=>{window.__autoLive=true;
  const e=exById(p.id);if(!e)return{title:'Không tìm thấy',html:'<div class="empty">Bài kiểm tra đã bị xóa.</div>'};
  const rs=await DB.byExam(e.id),nk=Object.keys(e.keys).length,cl=exClsIds(e).map(clsById),P={id:e.id};
  return{title:e.name,act:`<button class="act" data-go="examForm" data-p='${esc(JSON.stringify(P))}'>Sửa</button>`,html:`
- <div class="card"><div class="meta num"><span>Phiếu mẫu ${TPLS[e.tpl].code} · ${esc(TPLS[e.tpl].short)}</span><span>Số câu: ${e.n1}; ${e.n2}; ${e.n3}</span><span>Điểm tối đa ${fmt(e.scale10?10:examMax(e))}</span></div><div class="meta num">${e.n1?`<span>P1: ${fmt(e.p1pt)}/câu</span>`:''}${e.n2?`<span>P2: ${p2of(e).map(fmt).join(' · ')}</span>`:''}${e.n3?`<span>P3: ${fmt(e.p3pt)}/câu</span>`:''}${e.noSbd?'<span>Không quét SBD</span>':''}</div></div>
+ <div class="card"><div class="meta num"><span>Phiếu mẫu ${TPLS[e.tpl].code} · ${esc(TPLS[e.tpl].short)}</span><span>Số câu: ${e.n1}; ${e.n2}; ${e.n3}</span><span>Điểm tối đa ${e.scale10?`10 (quy đổi từ ${fmt(examMax(e))})`:fmt(examMax(e))}</span></div><div class="meta num">${e.n1?`<span>P1: ${fmt(e.p1pt)}/câu</span>`:''}${e.n2?`<span>P2: ${p2of(e).map(fmt).join(' · ')}</span>`:''}${e.n3?`<span>P3: ${fmt(e.p3pt)}/câu</span>`:''}${e.noSbd?'<span>Không quét SBD</span>':''}</div></div>
  ${!nk?'<div class="warnbox">Bước tiếp theo: nhập đáp án cho từng mã đề, sau đó bấm Chấm bài để quét.</div>':''}
  <div class="ea big"><button class="btn pri" data-go="scan" data-p='${esc(JSON.stringify({id:e.id,auto:1}))}'>${ICON.cam} Chấm bài</button><button class="btn" data-go="results" data-p='${esc(JSON.stringify(P))}'>${ICON.img} Kết quả (${rs.length})</button></div>
  <div class="menu">
@@ -1559,7 +1563,7 @@ function showKeyQR(e){
 /* ---------- Mã QR tra điểm cho học sinh ---------- */
 function appBase(){try{const v=localStorage.getItem('ct_base');if(v)return v;}catch(e){}
  if(/^https?:$/.test(location.protocol)&&!/claude\.(ai|site|com)|claudeusercontent|androidplatform\.net|localhost/.test(location.hostname))return location.origin+location.pathname;return DEFAULT_BASE;}
-const BUILD='11/11/2026 19:59';
+const BUILD='11/11/2026 20:09';
 const DEFAULT_BASE='https://hatthi32.github.io/CHAMTHI-TN/';
 const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const unb64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
@@ -1672,7 +1676,7 @@ async function saveAnalysis(e,A){
 const critical=i=>/^Mã đề (tô thiếu|tô nhiều|\d+ không có)/.test(i);
 function issueHtml(r){const c=r.issues.filter(critical),o=r.issues.filter(i=>!critical(i));return (c.length?`<div class="badbox" role="alert"><b>${c.map(esc).join('<br>')}</b><br>Kiểm tra lại phiếu, hoặc sửa mã đề ở mục Xem / sửa.</div>`:'')+(o.length?`<div class="row">${o.map(i=>`<span class="pill warn">${esc(i)}</span>`).join('')}</div>`:'');}
 function scoreBlock(e,r){const s=r.score;if(!s)return`<div class="warnbox">${esc(r.issues[0]||'Chưa chấm')}</div>`;
- return`<div class="bd num">${e.n1?`<div><span>Phần I</span><b>${s.p1c}/${e.n1}</b><span>${fmt(s.s1)} điểm</span></div>`:''}${e.n2?`<div><span>Phần II</span><b>${s.p2c.reduce((a,b)=>a+b,0)}/${e.n2*4} ý</b><span>${fmt(s.s2)} điểm</span></div>`:''}${e.n3?`<div><span>Phần III</span><b>${s.p3c}/${e.n3}</b><span>${fmt(s.s3)} điểm</span></div>`:''}</div>`;}
+ return`<div class="bd num">${e.n1?`<div><span>Phần I</span><b>${s.p1c}/${e.n1}</b><span>${fmt(s.s1)} điểm</span></div>`:''}${e.n2?`<div><span>Phần II</span><b>${s.p2c.reduce((a,b)=>a+b,0)}/${e.n2*4} ý</b><span>${fmt(s.s2)} điểm</span></div>`:''}${e.n3?`<div><span>Phần III</span><b>${s.p3c}/${e.n3}</b><span>${fmt(s.s3)} điểm</span></div>`:''}</div>${e.scale10?`<div class="note sc10n">Cộng 3 phần: <b>${fmt(rawOf(s))}</b> / ${fmt(examMax(e))} điểm tối đa. Bài kiểm tra này đang chọn <b>quy về thang 10</b>: ${fmt(rawOf(s))} × 10 ÷ ${fmt(examMax(e))} = <b>${fmt(s.total)}</b>. Bỏ chọn ở mục Sửa bài kiểm tra nếu muốn giữ điểm cộng.</div>`:''}`;}
 async function showScanResult(e,r,batch){
  const out=$('#sOut');if(!out)return;const fresh=await DB.get('results',r.id);if(!fresh){out.innerHTML='';return;}r=fresh;
  out.innerHTML=`<div class="card">
@@ -1872,10 +1876,10 @@ V.results=async(p)=>{
  rs.sort(sorts[so]);resOrder={eid:e.id,ids:rs.map(r=>r.id)};
  const rows=rs.map(r=>`<button class="res" data-go="result" data-p='${esc(JSON.stringify({id:e.id,rid:r.id}))}'>
   <span class="rimg"><img src="${r.crop}" alt="Phần họ tên trên phiếu SBD ${esc(sbdTxt(r))}"></span>
-  <span class="rsc ${r.score?(r.score.total>=(e.scale10?10:examMax(e))/2?'hi':''):'na'}">${r.score?fmt(r.score.total):'–'}<small>điểm</small></span>
+  <span class="rsc ${r.score?(r.score.total>=(e.scale10?10:examMax(e))/2?'hi':''):'na'}">${r.score?fmt(r.score.total):'–'}<small>${r.score&&e.scale10?'thang 10':'điểm'}</small></span>
   <span class="rnm">${dn(r)?esc(dn(r)):'<i>Chưa có tên</i>'}${!r.name&&!r.nameManual&&r.nameAI&&dn(r)?' <span class="pill">AI đọc</span>':''}</span>
   <span class="rmt num"><span>SBD <b>${esc(sbdTxt(r))}</b></span><span>Mã đề <b>${esc(r.ans.made)}</b></span>${dl(r)?`<span>Lớp <b>${esc(dl(r))}</b></span>`:''}</span>
-  ${r.score?`<span class="pp num">${partLine(e,r.score)}</span>`:''}${r.issues.length?`<span class="nm">${r.issues.map(i=>`<span class="pill ${critical(i)?'bad':'warn'}">${esc(i)}</span>`).join('')}</span>`:''}</button>`).join('');
+  ${r.score?`<span class="pp num">${partLine(e,r.score)}${e.scale10?`<i>|</i><span style="white-space:nowrap">Cộng <b>${fmt(rawOf(r.score))}/${fmt(examMax(e))}</b></span>`:''}</span>`:''}${r.issues.length?`<span class="nm">${r.issues.map(i=>`<span class="pill ${critical(i)?'bad':'warn'}">${esc(i)}</span>`).join('')}</span>`:''}</button>`).join('');
  const P=x=>esc(JSON.stringify({...p,...x}));
  return{title:'Bài đã chấm · '+e.name,html:`
  <div class="row"><label class="f grow">Lọc<select class="in" id="rF"><option value="all">Tất cả</option><option value="issue"${f==='issue'?' selected':''}>Cần kiểm tra</option>${mades.map(m=>`<option value="${esc(m)}"${f===m?' selected':''}>Mã đề ${esc(m)}</option>`).join('')}</select></label>
@@ -1927,7 +1931,7 @@ function groupRows(e,rs){
 function scoreRow(i,x){const s=x.r&&x.r.score;return[i+1,x.sbd,x.name,x.lop,x.r?x.r.ans.made:'',s?s.s1:'',s?s.s2:'',s?s.s3:'',s?s.total:'',x.r?x.r.issues.join('; '):'Chưa có bài'];}
 function buildXlsx(e,rs){
  const wb=XLSX.utils.book_new(),groups=groupRows(e,rs),cols=[{wch:5},{wch:9},{wch:26},{wch:9},{wch:7},{wch:11},{wch:11},{wch:12},{wch:10},{wch:34}];
- const sheet=(title,list)=>{const rows=[[title],[`Bài: ${e.name} · Phiếu mẫu ${TPLS[e.tpl].code} · Số câu ${e.n1}; ${e.n2}; ${e.n3} · Điểm tối đa ${fmt(e.scale10?10:examMax(e))} · Xuất lúc ${nowStr()}`],[],HEAD,...list.map((x,i)=>scoreRow(i,x))];
+ const sheet=(title,list)=>{const rows=[[title],[`Bài: ${e.name} · Phiếu mẫu ${TPLS[e.tpl].code} · Số câu ${e.n1}; ${e.n2}; ${e.n3} · Điểm tối đa ${fmt(e.scale10?10:examMax(e))}${e.scale10?` (đã quy đổi: tổng điểm = điểm cộng các phần × 10 ÷ ${fmt(examMax(e))})`:''} · Xuất lúc ${nowStr()}`],[],HEAD,...list.map((x,i)=>scoreRow(i,x))];
   const sc=list.filter(x=>x.r&&x.r.score).map(x=>x.r.score.total);if(sc.length)rows.push([],['','','Số bài',sc.length],['','','Điểm trung bình',r2(sc.reduce((a,b)=>a+b,0)/sc.length)]);
   const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=cols;ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:9}},{s:{r:1,c:0},e:{r:1,c:9}}];
   for(const a in ws){if(/^B\d+$/.test(a)&&ws[a].t==='s'&&/^\d+$/.test(ws[a].v)){ws[a].z='@';}}return ws;};
