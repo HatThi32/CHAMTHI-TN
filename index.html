@@ -699,10 +699,12 @@ const FMT={
  a4:{id:'a4',W:210,H:297,MK:[[13,13],[197,13],[197,284],[13,284]],mks:7,CODE:[[81,284],[93,284],[105,284],[117,284]],cds:4,ring:4.5,crop:[12,24,186,15]},
  // Phiếu QM 2025 (Sử, Tin, CN, GDPL) của app Chấm Thi QM: đo từ phiếu thật, đơn vị quy đổi để ô tròn cùng cỡ với phiếu của app.
  // Không có ô mã mẫu phiếu; nhận diện bằng 13 ô vuông nhỏ ở góc các phần.
- qm:{id:'qm',W:235.5,H:131.8,MK:[[12.8,12.8],[222.72,12.8],[222.72,119.04],[12.8,119.04]],mks:5.9,CODE:[],cds:3.3,ring:3.5,crop:[32,13.4,134.4,15.4],
-  marks:[[87.95,49.09],[115.71,49.24],[188.88,55.05],[148.84,55.23],[19.88,59.52],[45.43,59.46],[148.75,81],[188.85,81.02],[45.44,115.66],[188.47,115.52],[87.56,115.92],[115.57,115.79],[148.86,115.8]],
-  grid:{made:[[25.18,64.78],[4.77,0.03],[0.02,5.07]],sbd:[[50.68,64.63],[4.91,0],[-0.02,5.13]],p1:[[[93.52,54.33],[4.92,-0.01],[-0.03,5.11]],[[121.04,54.27],[4.9,0],[0,5.11]]],
-   p2:[[154.39,60.26],[172.04,60.33],[194.19,60.43],[210.81,60.27],[154.25,95.28],[171.91,95.32]],p2UV:[[4.92,0],[0,5.13]]}},
+ qm:{id:'qm',W:235.5,H:131.8,MK:[[12.8,12.8],[222.72,12.8],[222.72,119.04],[12.8,119.04]],mks:5.9,CODE:[],cds:3.3,ring:3.5,crop:[14,7.5,150,22],
+  marks:[[88.2,49.11],[115.67,49.11],[148.45,55.3],[187.73,55.3],[20.38,59.22],[46.17,59.22],[148.45,80.67],[187.73,80.67],[46.17,115.07],[88.2,115.07],[115.67,115.07],[148.45,115.07],[187.73,115.07]],
+  // lưới ô tròn lấy chính xác từ file PDF mẫu phiếu QM (bản vẽ vector)
+  grid:{made:[[25.823,64.31],[4.804,-0.021],[0.001,5.078]],sbd:[[51.654,64.303],[4.834,-0.004],[0.001,5.079]],p1:[[[93.656,54.179],[4.809,-0.015],[-0.001,5.075]],[[121.144,54.204],[4.804,-0.021],[-0.001,5.074]]],
+   p2:[[153.862,60.33],[171.089,60.33],[193.139,60.33],[210.366,60.33],[153.862,94.729],[171.089,94.729]],p2UV:[[4.872,0.017],[0,5.085]]}},
+
  a5:{id:'a5',W:210,H:148.5,MK:[[11,10],[199,10],[199,138.5],[11,138.5]],mks:6,CODE:[[82,138.5],[92,138.5],[102,138.5],[112,138.5]],cds:3.5,ring:3.7,crop:[12,14.5,186,9]},
 };
 const fmtOf=t=>FMT[t.fmt||'a4'];
@@ -913,12 +915,17 @@ function warpRGB(d,w,h,H,K,F){const W=Math.round(F.W*K),HH=Math.round(F.H*K),c=d
  ctx.putImageData(id,0,0);return c;}
 function pxAt(R,x,y){const u=Math.round(x*R.K),v=Math.round(y*R.K);if(u<0||v<0||u>=R.W||v>=R.H)return 255;return R.g[v*R.W+u];}
 const RING=(()=>{const a=[];for(const rr of [RB-0.1,RB+0.1])for(let i=0;i<12;i++){const t=i*Math.PI/6;a.push([rr*Math.cos(t),rr*Math.sin(t)]);}return a;})();
-function ringDark(R,x,y){let t=0;const K=R.K,W=R.W,Hh=R.H,g=R.g;for(const p of RING){const u=Math.round((x+p[0])*K),v=Math.round((y+p[1])*K);t+=(u<0||v<0||u>=W||v>=Hh)?0:255-g[v*W+u];}return t*1.5;}
+function ringDark(R,x,y,s=1){let t=0;const K=R.K,W=R.W,Hh=R.H,g=R.g;for(const p of RING){const u=Math.round((x+p[0]*s)*K),v=Math.round((y+p[1]*s)*K);t+=(u<0||v<0||u>=W||v>=Hh)?0:255-g[v*W+u];}return t*1.5;}
 function readFills(R,L){
  const offs=[],fills=new Map(),ringC=new Map(),quality=[];
+ // Phiếu in từ nơi khác (QM): cỡ ô tròn có thể khác chút ít, tự dò bán kính viền ô trên chính ảnh
+ let rs=1;if(L.F.marks){let bestS=-1;for(const s of [0.8,0.86,0.92,0.98,1.04,1.1,1.16,1.22]){let tot=0;
+   for(const bs of L.blocks){let m=0;for(let dx=-1.5;dx<=1.501;dx+=0.5)for(let dy=-1.5;dy<=1.501;dy+=0.5){let t=0;for(const b of bs)t+=ringDark(R,b.x+dx,b.y+dy,s);if(t>m)m=t;}tot+=m;}
+   if(tot>bestS){bestS=tot;rs=s;}}}
+ const RBs=RB*rs;
  L.blocks.forEach((bs,bi)=>{
   let best=[0,0],bv=-1;
-  const sc=(dx,dy)=>{let s=0;for(const b of bs)s+=ringDark(R,b.x+dx,b.y+dy);if(s>bv){bv=s;best=[dx,dy];}};
+  const sc=(dx,dy)=>{let s=0;for(const b of bs)s+=ringDark(R,b.x+dx,b.y+dy,rs);if(s>bv){bv=s;best=[dx,dy];}};
   for(let dx=-1.5;dx<=1.501;dx+=0.5)for(let dy=-1.5;dy<=1.501;dy+=0.5)sc(dx,dy);
   {const [cx0,cy0]=best;for(let dx=-0.25;dx<=0.26;dx+=0.25)for(let dy=-0.25;dy<=0.26;dy+=0.25)if(dx||dy)sc(cx0+dx,cy0+dy);}
   offs[bi]=[r2(best[0]),r2(best[1])];
@@ -929,21 +936,21 @@ function readFills(R,L){
   white=Math.max(white,40);
   let sat=0;for(let i=248;i<256;i++)sat+=hist[i];
   quality[bi]={white,sat:sat/Math.max(n,1)};
-  const rin=RB*0.6*K;
+  const rin=RBs*0.6*K;
   for(const b of bs){
    // giấy cong/vênh: tinh chỉnh vị trí riêng từng ô trong phạm vi ±0,75 mm quanh độ lệch của cả khối
-   let bx=best[0],by=best[1],bvv=ringDark(R,b.x+bx,b.y+by);
-   for(let dx=-0.75;dx<=0.76;dx+=0.25)for(let dy=-0.75;dy<=0.76;dy+=0.25){const v=ringDark(R,b.x+best[0]+dx,b.y+best[1]+dy);if(v>bvv*1.02){bvv=v;bx=best[0]+dx;by=best[1]+dy;}}
+   let bx=best[0],by=best[1],bvv=ringDark(R,b.x+bx,b.y+by,rs);
+   for(let dx=-0.75;dx<=0.76;dx+=0.25)for(let dy=-0.75;dy<=0.76;dy+=0.25){const v=ringDark(R,b.x+best[0]+dx,b.y+best[1]+dy,rs);if(v>bvv*1.02){bvv=v;bx=best[0]+dx;by=best[1]+dy;}}
    const cx=(b.x+bx)*K,cy=(b.y+by)*K;let t=0,m=0;
    // nền giấy ngay quanh ô (bóng tay/điện thoại đổ lên một góc phiếu làm giấy tối hơn chỗ khác)
-   const lw=[];for(let k=0;k<8;k++){const a=k*Math.PI/4+Math.PI/8,px=cx+Math.cos(a)*(RB+1.15)*K,py=cy+Math.sin(a)*(RB+1.15)*K;let s2=0,c2=0;
+   const lw=[];for(let k=0;k<8;k++){const a=k*Math.PI/4+Math.PI/8,px=cx+Math.cos(a)*(RBs+1.15)*K,py=cy+Math.sin(a)*(RBs+1.15)*K;let s2=0,c2=0;
     for(let v=Math.round(py-1);v<=Math.round(py+1);v++)for(let u=Math.round(px-1);u<=Math.round(px+1);u++)if(u>=0&&v>=0&&u<R.W&&v<R.H){s2+=R.g[v*R.W+u];c2++;}lw.push(c2?s2/c2:white);}
    lw.sort((a,b)=>a-b);const we=Math.max(40,Math.min(white,lw[5]));
    ringC.set(b,(white-(255-bvv/36))/white);
    for(let v=Math.floor(cy-rin);v<=Math.ceil(cy+rin);v++)for(let u=Math.floor(cx-rin);u<=Math.ceil(cx+rin);u++){if((u-cx)**2+(v-cy)**2>rin*rin||u<0||v<0||u>=R.W||v>=R.H)continue;t+=R.g[v*R.W+u];m++;}
    const inner=m?t/m:255;fills.set(b,Math.max(0,Math.min(1,(we-inner)/we)));}
  });
- return{offs,fills,ringC,quality};
+ return{offs,fills,ringC,quality,rs};
 }
 // Ngưỡng cho từng câu: một ô tô nhạt (bút chì nhạt) mà các ô còn lại trong câu sạch trơn thì vẫn là ô được chọn
 function grpTh(f,T){let s0=0,s1=0;for(const v of f){if(v>s0){s1=s0;s0=v;}else if(v>s1)s1=v;}const Tl=Math.max(0.14,0.6*T);return(s0>=Tl&&s1<=0.06&&s0>=3.5*Math.max(s1,0.03))?Math.min(T,Tl):T;}
@@ -986,7 +993,7 @@ function analyzeCanvas(cv,ex,hint){const wantTpl=ex?ex.tpl:null;
  // Đọc ô tô trên kênh màu đỏ: mực xanh/đen và bút chì đậm rõ, nét bút đỏ chấm bài của giáo viên gần như biến mất
  const gr=new Uint8Array(w*h);for(let i=0,j=0;i<gr.length;i++,j+=4)gr[i]=id.data[j];
  const L=lay(tplId),R=warpGray(gr,w,h,H,5,F);
- const {offs,fills,ringC,quality}=readFills(R,L);
+ const {offs,fills,ringC,quality,rs}=readFills(R,L);
  // 1) ánh sáng & lóa: viền ô tròn phải thấy rõ ở mọi ô cần đọc
  const usedB=[];L.blocks.forEach((bs,bi)=>{if(bs.some(b=>usedBubble(ex,b)))usedB.push(bi);});
  const whites=usedB.map(bi=>quality[bi].white).sort((a,b)=>a-b),medW=whites[whites.length>>1]||255;
@@ -1018,7 +1025,7 @@ function analyzeCanvas(cv,ex,hint){const wantTpl=ex?ex.tpl:null;
  L.p3.forEach((q,i)=>{if(ex&&i>=ex.n3)return;for(let j=0;j<4;j++){const o=[];if(j===0)o.push(q.minus);if(q.comma[j])o.push(q.comma[j]);o.push(...q.digits[j]);chk(o,'Phần III câu '+(i+1));}});
  const flags=[];const uu=[...new Set(unsure)];
  const disp=warpRGB(id.data,w,h,H,6,F);
- return{tplId,ans,offs,disp,flags,unsure:uu};
+ return{tplId,ans,offs,disp,flags,unsure:uu,rs};
 }
 const unsureMsg=u=>`Chưa chắc chắn ở ${u.slice(0,6).join(', ')}${u.length>6?'… ('+u.length+' chỗ)':''}: ô tô mờ, tô chưa kín hoặc tẩy chưa sạch.`;
 
@@ -1091,7 +1098,7 @@ async function blobToImg(b){return new Promise((res,rej)=>{const u=URL.createObj
 function drawOverlay(ctx,ex,res){
  const L=lay(ex.tpl),K=ctx.canvas.width/L.F.W,key=ex.keys[res.ans.made],a=res.ans,off=res.offs||[];
  const P=b=>{const o=off[b.b]||[0,0];return[(b.x+o[0])*K,(b.y+o[1])*K]};
- const ring=(b,col,w=2.4)=>{const[x,y]=P(b);ctx.strokeStyle=col;ctx.lineWidth=w*K/4;ctx.beginPath();ctx.arc(x,y,RB*K*1.25,0,Math.PI*2);ctx.stroke();};
+ const ring=(b,col,w=2.4)=>{const[x,y]=P(b);ctx.strokeStyle=col;ctx.lineWidth=w*K/4;ctx.beginPath();ctx.arc(x,y,RB*(res.rs||1)*K*1.25,0,Math.PI*2);ctx.stroke();};
  const G='#12a150',RD='#e02a20',YE='#e8b400',BL='#2a6ee0';
  L.made.forEach((c,j)=>{const d=parseInt((a.madeRaw||a.made)[j]);if(d>=0)ring(c[d],G,3);});
  L.sbd.forEach((c,j)=>{const d=parseInt(a.sbd[j]);if(d>=0)ring(c[d],G,3);});
@@ -1528,7 +1535,7 @@ function showKeyQR(e){
 /* ---------- Mã QR tra điểm cho học sinh ---------- */
 function appBase(){try{const v=localStorage.getItem('ct_base');if(v)return v;}catch(e){}
  if(/^https?:$/.test(location.protocol)&&!/claude\.(ai|site|com)|claudeusercontent|androidplatform\.net|localhost/.test(location.hostname))return location.origin+location.pathname;return DEFAULT_BASE;}
-const BUILD='11/11/2026 19:34';
+const BUILD='11/11/2026 19:46';
 const DEFAULT_BASE='https://hatthi32.github.io/CHAMTHI-TN/';
 const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const unb64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
@@ -1631,7 +1638,7 @@ async function scanOne(e,file){
 async function saveAnalysis(e,A){
  const imgId=uid(),blob=await canvasBlob(A.disp,'image/jpeg',0.8);await DB.put('images',{id:imgId,blob});
  const cr=lay(A.tplId).F.crop,crop=document.createElement('canvas');crop.width=560;crop.height=Math.round(560*cr[3]/cr[2]);{const kd=A.disp.width/lay(A.tplId).F.W;crop.getContext('2d').drawImage(A.disp,cr[0]*kd,cr[1]*kd,cr[2]*kd,cr[3]*kd,0,0,crop.width,crop.height);}
- const res={id:uid(),examId:e.id,time:Date.now(),timeStr:nowStr(),ans:A.ans,offs:A.offs,flags:A.flags||[],unsure:A.unsure||[],imgId,crop:crop.toDataURL('image/jpeg',0.75)};
+ const res={id:uid(),examId:e.id,time:Date.now(),timeStr:nowStr(),ans:A.ans,offs:A.offs,flags:A.flags||[],unsure:A.unsure||[],rs:A.rs||1,imgId,crop:crop.toDataURL('image/jpeg',0.75)};
  res.score=grade(e,res.ans);res.name=nameFor(e,res.ans.sbd);res.cls=(stuOf(e,res.ans.sbd)||{}).cls||'';const all=await DB.byExam(e.id);res.issues=issuesOf(e,res,all.concat([res]));
  await DB.put('results',res);
  for(const o of all)if(o.ans.sbd===res.ans.sbd&&!/[_?]/.test(res.ans.sbd)&&!o.issues.includes('Trùng SBD với bài khác')){o.issues.push('Trùng SBD với bài khác');await DB.put('results',o);}
