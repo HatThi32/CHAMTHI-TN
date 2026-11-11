@@ -1563,7 +1563,7 @@ function showKeyQR(e){
 /* ---------- Mã QR tra điểm cho học sinh ---------- */
 function appBase(){try{const v=localStorage.getItem('ct_base');if(v)return v;}catch(e){}
  if(/^https?:$/.test(location.protocol)&&!/claude\.(ai|site|com)|claudeusercontent|androidplatform\.net|localhost/.test(location.hostname))return location.origin+location.pathname;return DEFAULT_BASE;}
-const BUILD='11/11/2026 20:09';
+const BUILD='11/11/2026 20:15';
 const DEFAULT_BASE='https://hatthi32.github.io/CHAMTHI-TN/';
 const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const unb64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
@@ -1792,10 +1792,13 @@ async function startLive(e){
  // Khung ngắm kiểu QM: 4 khung xanh lớn ở 4 góc, mỗi khung tự tìm ô vuông đen nằm trong nó
  const F=lay(e.tpl).F,mkW=F.MK[1][0]-F.MK[0][0],mkH=F.MK[3][1]-F.MK[0][1];
  const guide=(W,H)=>liveGuide(W,H,F,ov.clientWidth||W,ov.clientHeight||H);
- const drawGuide=(g,hit)=>{cx.save();g.pts.forEach((p,i)=>{const b=g.box,on=!!hit[i];cx.lineWidth=on?6:4;cx.strokeStyle=on?'#22ff66':'#16e05a';
+ const drawGuide=(g,hit)=>{cx.save();
+  // khung camera được phóng to ra màn hình: quy độ dày nét về khoảng 2 px màn hình cho mảnh, gọn
+  const sc=Math.max((ov.clientWidth||cv.width)/cv.width,(ov.clientHeight||cv.height)/cv.height)||1;
+  g.pts.forEach((p,i)=>{const b=g.box,on=!!hit[i];cx.lineWidth=(on?2.5:1.8)/sc;cx.strokeStyle=on?'#22ff66':'#16e05a';
    const bx=(i===0||i===3)?p[0]-b*0.32:p[0]-b*0.68,by=i<2?p[1]-b*0.32:p[1]-b*0.68;
-   cx.fillStyle=on?'rgba(34,255,102,.22)':'rgba(0,0,0,0)';cx.beginPath();cx.rect(bx,by,b,b);cx.fill();cx.stroke();
-   if(on){cx.fillStyle='#22ff66';cx.beginPath();cx.arc(hit[i].x,hit[i].y,5,0,7);cx.fill();}});cx.restore();};
+   cx.fillStyle=on?'rgba(34,255,102,.16)':'rgba(0,0,0,0)';cx.beginPath();cx.rect(bx,by,b,b);cx.fill();cx.stroke();
+   if(on){cx.fillStyle='#22ff66';cx.beginPath();cx.arc(hit[i].x,hit[i].y,4/sc,0,7);cx.fill();}});cx.restore();};
  let lastHits=null;
  const tick=async()=>{if(!running)return;
   if(video.readyState>=2&&!busy){const vw=video.videoWidth,vh=video.videoHeight,W=480,H=Math.round(480*vh/vw);
