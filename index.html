@@ -134,7 +134,7 @@ input.in:focus,select.in:focus,textarea.in:focus{outline:2px solid var(--accent)
 .zb:disabled{opacity:.3}.zb svg{width:22px;height:22px}
 .zh{font-size:13px;color:rgba(255,255,255,.7);text-align:center}
 .zs{flex:1;position:relative;overflow:hidden;display:grid;place-items:center;touch-action:none}
-.zs img{display:block;max-width:none;transform-origin:center center;user-select:none;-webkit-user-drag:none;pointer-events:none;will-change:transform}
+.zs .zimg{display:block;max-width:none;height:auto;transform-origin:center center;user-select:none;-webkit-user-drag:none;pointer-events:none;will-change:transform}
 .sech{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:4px}.sech h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.01em}
 .ecard{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
 .ecard .eh{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;width:100%;padding:16px 16px 12px;background:none;border:0;text-align:left;cursor:pointer;color:inherit}
@@ -1563,7 +1563,7 @@ function showKeyQR(e){
 /* ---------- Mã QR tra điểm cho học sinh ---------- */
 function appBase(){try{const v=localStorage.getItem('ct_base');if(v)return v;}catch(e){}
  if(/^https?:$/.test(location.protocol)&&!/claude\.(ai|site|com)|claudeusercontent|androidplatform\.net|localhost/.test(location.hostname))return location.origin+location.pathname;return DEFAULT_BASE;}
-const BUILD='11/11/2026 20:15';
+const BUILD='11/11/2026 20:22';
 const DEFAULT_BASE='https://hatthi32.github.io/CHAMTHI-TN/';
 const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const unb64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
@@ -1847,9 +1847,10 @@ function qDetail(e,r){const key=e.keys[r.ans.made];if(!key)return'';const a=r.an
 function openZoom(canvas,title,nav){
  const ov=document.createElement('div');ov.className='zv';ov.setAttribute('role','dialog');ov.setAttribute('aria-label','Ảnh bài làm phóng to');
  ov.innerHTML=`<div class="zt"><button class="zb" data-z="x" aria-label="Đóng"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button><b>${esc(title)}</b>${nav?`<button class="zb" data-z="p" aria-label="Bài trước"${nav.prev?'':' disabled'}>‹</button><button class="zb" data-z="n" aria-label="Bài sau"${nav.next?'':' disabled'}>›</button>`:''}</div>
-  <div class="zs"><img alt="Ảnh bài làm đã chấm"></div><div class="zf"><button class="zb" data-z="-" aria-label="Thu nhỏ">−</button><span class="zh">Chụm 2 ngón để phóng to · chạm đúp để phóng nhanh</span><button class="zb" data-z="+" aria-label="Phóng to">+</button></div>`;
- document.body.appendChild(ov);const st=ov.querySelector('.zs'),img=ov.querySelector('img');
- let url=null;canvas.toBlob(b=>{url=URL.createObjectURL(b);img.src=url;},'image/jpeg',0.92);
+  <div class="zs"><canvas class="zimg" role="img" aria-label="Ảnh bài làm đã chấm"></canvas></div><div class="zf"><button class="zb" data-z="-" aria-label="Thu nhỏ">−</button><span class="zh">Chụm 2 ngón để phóng to · chạm đúp để phóng nhanh</span><button class="zb" data-z="+" aria-label="Phóng to">+</button></div>`;
+ document.body.appendChild(ov);const st=ov.querySelector('.zs'),img=ov.querySelector('.zimg');
+ // vẽ thẳng ảnh lên canvas (WebView trên Android không hiện được ảnh dạng blob)
+ img.width=canvas.width;img.height=canvas.height;img.getContext('2d').drawImage(canvas,0,0);const url=null;
  let s=1,tx=0,ty=0,base=1;const pts=new Map();let pinch=null,last=0,drag=null;
  const fit=()=>{const r=st.getBoundingClientRect();base=Math.min(r.width/canvas.width,r.height/canvas.height);};
  const clamp=()=>{const r=st.getBoundingClientRect(),w=canvas.width*base*s,h=canvas.height*base*s;const mx=Math.max(0,(w-r.width)/2),my=Math.max(0,(h-r.height)/2);tx=Math.max(-mx,Math.min(mx,tx));ty=Math.max(-my,Math.min(my,ty));};
@@ -1899,7 +1900,6 @@ V.result=async(p)=>{
  <div class="card"><div class="row"><div class="grow"><h3>${esc(dn(r)||'Chưa rõ tên')}</h3><div class="meta num"><span>${esc(r.timeStr)}</span></div></div><div class="score" style="font-size:44px">${r.score?fmt(r.score.total):'–'}</div></div>
  ${scoreBlock(e,r)}${issueHtml(r)}</div>
  <button class="zoomin" id="rZoom" aria-label="Phóng to ảnh bài làm"><canvas id="rImg" class="sheetimg" width="840" height="1188"></canvas><span class="zbadge">${ZOOMI} Chạm để phóng to</span></button>
- ${qDetail(e,r)}
  <div class="note">Trên ảnh, mỗi câu khoanh một vòng tại đáp án đúng. Xanh lá: tô đúng · Đỏ: tô sai · Vàng: bỏ trống, tô nhiều ô hoặc tô mờ Mã đề và SBD máy đọc được khoanh xanh lá.</div>
  <div class="lbl">Sửa thông tin máy đọc</div>
  <div class="grid2"><label class="f">Họ và tên${!r.name&&!r.nameManual&&r.nameAI?' (AI đọc)':''}<input class="in" id="rName" value="${esc(dn(r))}" placeholder="${r.name?'':'Nhập tay nếu chưa có'}"></label><label class="f">Lớp<input class="in" id="rLop" value="${esc(dl(r))}" maxlength="20"></label></div>
