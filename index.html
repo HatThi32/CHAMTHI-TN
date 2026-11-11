@@ -3,17 +3,17 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap">
 <style>
 /* Layout: một cột cho điện thoại; thanh tiêu đề màu bảng xanh, mặt giấy sáng, điểm số đỏ như bút chấm bài, chi tiết vàng đồng */
 :root{
-  --bg:#F1F3EF; --surface:#FFFFFF; --surface2:#F6F7F4; --ink:#14211B; --muted:#5D6A63; --line:#DDE3DE; --line2:#C9D2CC;
-  --board:#16382D; --board2:#1E4A3C; --chalk:#F3F1E8; --chalk-dim:#B9C7BE;
-  --accent:#1D5C47; --accent-ink:#FFFFFF; --accent-soft:#E4EEE8; --brass:#A57A26; --brass-soft:#F4ECD9;
+  --bg:#EEF2F0; --surface:#FFFFFF; --surface2:#F4F7F5; --ink:#0F1A15; --muted:#3F4B45; --line:#D3DBD6; --line2:#B7C2BB;
+  --board:#0E5A45; --board2:#12694F; --chalk:#F3F1E8; --chalk-dim:#B9C7BE;
+  --accent:#0E6B50; --accent-ink:#FFFFFF; --accent-soft:#E4EEE8; --brass:#A57A26; --brass-soft:#F4ECD9;
   --pen:#B8322A; --ok:#1E7A4E; --ok-soft:#E2F1E8; --bad:#B8322A; --bad-soft:#F8E4E1; --warn:#946414; --warn-soft:#F6EDD8;
   --bar:var(--board); --bar-fg:var(--chalk);
-  --f:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
-  --fd:"Fraunces",Georgia,"Times New Roman",serif;
+  --f:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --fd:var(--f);
   --r:14px; --shadow:0 1px 2px rgba(20,33,27,.05),0 6px 18px -10px rgba(20,33,27,.18);
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
@@ -32,11 +32,11 @@
 [hidden]{display:none!important}
 .vh{position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none;z-index:-1}
 label.btn,label.opt{-webkit-user-select:none;user-select:none}
-body{background:var(--bg);color:var(--ink);font-family:var(--f);font-size:15px;line-height:1.5;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+body{background:var(--bg);color:var(--ink);font-family:var(--f);font-size:16.5px;line-height:1.5;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bar)}
 button,input,select{font:inherit;color:inherit}
 .bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bar);color:var(--bar-fg);display:flex;align-items:center;gap:6px;min-height:58px;padding-block:6px;padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));border-bottom:1px solid color-mix(in srgb,var(--brass) 45%,transparent)}
-.bar h1{font-family:var(--fd);font-size:20px;font-weight:600;margin:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.005em;font-variation-settings:"opsz" 36}
+.bar h1{font-family:var(--f);font-size:20px;font-weight:700;margin:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.005em;font-variation-settings:"opsz" 36}
 .bar .ib{background:none;border:0;color:inherit;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;cursor:pointer;flex:none}
 .bar .ib:focus-visible,.bar .act:focus-visible{outline:2px solid var(--brass);outline-offset:1px}
 .bar .act{background:none;border:1px solid color-mix(in srgb,var(--chalk) 30%,transparent);color:inherit;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:.01em}
@@ -57,18 +57,18 @@ main{max-width:720px;margin:0 auto;padding-block:18px 100px;padding-left:max(16p
 .mi:focus-visible,.card:focus-visible,.btn:focus-visible,.chip:focus-visible,.tg:focus-visible,.res:focus-visible,.opt:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .mi .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--brass-soft);color:var(--brass);flex:none}
 .mi .tx{flex:1;min-width:0}
-.mi .tx b{display:block;font-size:16px;font-weight:650;letter-spacing:-.005em}
-.mi .tx span{display:block;font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis}
+.mi .tx b{display:block;font-size:17.5px;font-weight:700;letter-spacing:-.005em}
+.mi .tx span{display:block;font-size:14.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis}
 .mi .chev{color:var(--line2)}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0;box-shadow:var(--shadow)}
 .card.tap{cursor:pointer;text-align:left;width:100%}
 .card.tap:hover{border-color:var(--line2)}
-.card h3{margin:0;font-family:var(--fd);font-size:19px;font-weight:600;letter-spacing:-.01em;font-variation-settings:"opsz" 36}
+.card h3{margin:0;font-family:var(--fd);font-size:19px;font-weight:700;letter-spacing:-.01em;font-variation-settings:"opsz" 36}
 .card>b{font-weight:700}
-.meta{color:var(--muted);font-size:13px;display:flex;flex-wrap:wrap;gap:4px 14px}
+.meta{color:var(--muted);font-size:15px;display:flex;flex-wrap:wrap;gap:4px 14px}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .grow{flex:1;min-width:0}
-.btn{border:1px solid var(--line2);background:var(--surface);border-radius:12px;padding:10px 16px;font-weight:650;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;letter-spacing:.005em}
+.btn{border:1px solid var(--line2);background:var(--surface);border-radius:12px;padding:12px 18px;font-size:16.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;letter-spacing:.005em}
 .btn:hover{background:var(--surface2)}
 .btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);box-shadow:0 6px 16px -10px var(--accent)}
 .btn.pri:hover{filter:brightness(1.06)}
@@ -77,7 +77,7 @@ main{max-width:720px;margin:0 auto;padding-block:18px 100px;padding-left:max(16p
 .btn.sm{min-height:38px;padding:6px 12px;font-size:13px;border-radius:10px}
 .btn[disabled]{opacity:.45;cursor:default;box-shadow:none}
 .fab{position:fixed;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));width:60px;height:60px;border-radius:20px;border:0;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;box-shadow:0 10px 24px -8px rgba(10,30,22,.5);cursor:pointer;z-index:6}
-label.f{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted);font-weight:600}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:15px;color:var(--muted);font-weight:600}
 input.in,select.in,textarea.in{border:1px solid var(--line2);background:var(--surface);border-radius:12px;padding:10px 13px;font-size:16px;font-weight:500;color:var(--ink);width:100%;min-height:46px}
 input.in:focus,select.in:focus,textarea.in:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
@@ -98,13 +98,22 @@ input.in:focus,select.in:focus,textarea.in:focus{outline:2px solid var(--accent)
 .pill.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
 .empty{text-align:center;color:var(--muted);padding:30px 16px;border:1.5px dashed var(--line2);border-radius:var(--r);display:flex;flex-direction:column;gap:10px;align-items:center;background:var(--surface)}
 .empty b{color:var(--ink);font-family:var(--fd);font-size:19px;font-weight:600}
-.res{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 14px;align-items:center;background:transparent;border:0;padding:12px 14px;cursor:pointer;text-align:left;width:100%}
+.res{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"img sc" "nm sc" "mt mt" "pp pp" "is is";gap:6px 14px;align-items:center;background:transparent;border:0;padding:14px 16px;cursor:pointer;text-align:left;width:100%}
+.res .rimg{grid-area:img;display:block;height:52px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#fff}
+.res .rimg img{width:auto!important;height:100%!important;max-width:none;border:0!important;border-radius:0!important;object-fit:cover;object-position:left center}
+.res .rsc{grid-area:sc;align-self:start;min-width:74px;text-align:center;font:800 32px/1 var(--f);color:var(--pen);font-variant-numeric:tabular-nums;padding:8px 6px 6px;border-radius:12px;background:var(--bad-soft)}
+.res .rsc small{display:block;font:600 12px/1.2 var(--f);color:var(--muted);margin-top:4px}
+.res .rsc.hi{color:var(--ok);background:var(--ok-soft)}
+.res .rsc.na{color:var(--muted);background:var(--surface2)}
+.res .rnm{grid-area:nm;font-size:18px;font-weight:700;color:var(--ink);line-height:1.3}.res .rnm i{font-weight:500;color:var(--muted)}
+.res .rmt{grid-area:mt;display:flex;flex-wrap:wrap;gap:4px 16px;font-size:15px;color:var(--muted)}.res .rmt b{color:var(--ink);font-weight:700}
+.res .pp{grid-area:pp}.res .nm{grid-area:is}
 .res:hover{background:var(--surface2)}
 .res img{width:100%;height:auto;border-radius:6px;display:block;background:#fff;border:1px solid var(--line)}
 .res .rs{text-align:right;display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted)}
 .res .rs .score{font-size:28px;margin-top:2px}
 .res .nm{grid-column:1/-1;font-size:13px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.res .pp{grid-column:1/-1;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.res .pp{grid-column:1/-1;font-size:14.5px;color:var(--muted);font-variant-numeric:tabular-nums}
 .res .pp b{color:var(--ink);font-weight:700}.res .pp i{font-style:normal;color:var(--line2);margin:0 7px}
 .rnav{display:flex;align-items:center;justify-content:space-between;gap:10px}.rnav .btn{flex:1}.rnav span{font-size:14px;color:var(--muted);min-width:64px;text-align:center}
 .zoomin{position:relative;display:block;width:100%;padding:0;border:0;background:none;cursor:zoom-in}
@@ -126,6 +135,13 @@ input.in:focus,select.in:focus,textarea.in:focus{outline:2px solid var(--accent)
 .zh{font-size:13px;color:rgba(255,255,255,.7);text-align:center}
 .zs{flex:1;position:relative;overflow:hidden;display:grid;place-items:center;touch-action:none}
 .zs img{display:block;max-width:none;transform-origin:center center;user-select:none;-webkit-user-drag:none;pointer-events:none;will-change:transform}
+.sech{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:4px}.sech h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.01em}
+.ecard{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
+.ecard .eh{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;width:100%;padding:16px 16px 12px;background:none;border:0;text-align:left;cursor:pointer;color:inherit}
+.ecard .eh b{font-size:20px;font-weight:800;line-height:1.25;letter-spacing:-.01em}.ecard .eh .chev{grid-row:1/3;grid-column:2;align-self:center;color:var(--line2)}
+.ecard .eh .em{font-size:15px;color:var(--muted)}.ecard .eh .em strong{color:var(--ink)}.ecard .eh .em i{color:var(--warn);font-style:normal;font-weight:700}
+.ea{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 16px}.ea .btn{min-height:54px;font-size:17.5px;border-radius:14px;white-space:nowrap;padding:10px 12px}.ea .btn svg{width:22px;height:22px}
+.ea.big{padding:0}.ea.big .btn{min-height:62px;font-size:19px}
 .sheetimg{width:100%;height:auto;border-radius:10px;border:1px solid var(--line);background:#fff;display:block}
 .kp{display:flex;flex-direction:column;gap:6px}
 .kq{display:flex;align-items:center;gap:6px}
@@ -153,7 +169,7 @@ table.t{border-collapse:collapse;width:100%;font-size:14px}
 table.t th,table.t td{border-bottom:1px solid var(--line);padding:9px 6px;text-align:left}
 table.t th{font-size:11px;color:var(--brass);font-weight:700;text-transform:uppercase;letter-spacing:.12em}
 .tw{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:4px 10px}
-.note{font-size:13px;color:var(--muted);line-height:1.55}
+.note{font-size:15px;color:var(--muted);line-height:1.55}
 .warnbox{background:var(--warn-soft);color:var(--warn);border-radius:12px;padding:11px 14px;font-size:13px;font-weight:500}
 .badbox{background:var(--bad-soft);color:var(--bad);border-radius:12px;padding:11px 14px;font-size:14px;border:1.5px solid var(--bad)}
 .okbox{background:var(--ok-soft);color:var(--ok);border-radius:12px;padding:11px 14px;font-size:13px;font-weight:500}
@@ -172,17 +188,21 @@ table.t th{font-size:11px;color:var(--brass);font-weight:700;text-transform:uppe
 @keyframes lf{to{opacity:0}}
 .lcnt{background:rgba(10,16,13,.72);padding:12px 16px;border-radius:14px;font-weight:800;font-size:19px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .lbot{position:absolute;left:0;right:0;bottom:0;padding:12px max(16px,env(safe-area-inset-right,0px)) calc(14px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:10px;background:linear-gradient(transparent,rgba(0,0,0,.7))}
+.lside{display:contents}
 .lres{background:var(--surface);color:var(--ink);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;font-size:16px}
 .lres b{font-size:20px}
 .lres .score{font-size:46px!important}
 @media (orientation: landscape){
- .ltop{left:auto;width:32%;max-width:360px;flex-direction:column;align-items:stretch;padding:calc(10px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 8px 12px;background:none}
+ /* màn hình ngang: một cột bên phải, thông báo – kết quả – nút xếp chồng, không đè lên nhau */
+ .lside{position:absolute;top:0;right:0;bottom:0;width:32%;max-width:360px;display:flex;flex-direction:column;gap:8px;padding:calc(10px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) 12px;background:linear-gradient(90deg,transparent,rgba(0,0,0,.55) 18%)}
+ .lside .ltop,.lside .lbot{position:static;padding:0;background:none;width:auto;max-width:none}
+ .lside .ltop{flex-direction:column;align-items:stretch;flex:none}
+ .lside .lbot{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:8px}
  .lcnt{display:none}
- .lst{font-size:20px;padding:10px 14px}
- .lbot{left:auto;top:0;width:32%;max-width:360px;justify-content:flex-end;padding:12px max(12px,env(safe-area-inset-right,0px)) 12px 12px;background:linear-gradient(90deg,transparent,rgba(0,0,0,.6))}
- .lbot .row{flex-direction:column;align-items:stretch}
- .lbot .btn.big{min-height:52px}
- .lres{padding:12px}
+ .lst{font-size:19px;padding:9px 13px}
+ .lres{padding:10px 12px;min-height:0;overflow:auto;flex-shrink:1;gap:4px}.lres b{font-size:18px}.lres .note{font-size:13.5px}.lres .badbox{font-size:14px;padding:8px 10px}
+ .lbtn{flex:none;flex-direction:row!important}
+ .lbot .btn.big{min-height:50px;font-size:16px;padding:8px 10px}
 }
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom,0px));background:var(--board);color:var(--chalk);padding:11px 18px;border-radius:12px;font-size:14px;font-weight:500;z-index:20;max-width:calc(100% - 32px);box-shadow:0 10px 26px -8px rgba(0,0,0,.45);border:1px solid color-mix(in srgb,var(--brass) 40%,transparent)}
 .modal{position:fixed;inset:0;background:rgba(8,16,12,.55);z-index:15;display:flex;align-items:flex-end;justify-content:center;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
@@ -1163,29 +1183,32 @@ document.addEventListener('click',e=>{const el=e.target.closest('[data-go]');if(
 const mi=(ic,t,s,goV,p)=>`<button class="mi" data-go="${goV}"${p?` data-p='${esc(JSON.stringify(p))}'`:''}><span class="ic">${ICON[ic]}</span><span class="tx"><b>${esc(t)}</b>${s?`<span>${esc(s)}</span>`:''}</span><span class="chev">${ICON.chev}</span></button>`;
 
 /* ---------- Trang chủ ---------- */
+// Thẻ bài kiểm tra: bấm "Chấm bài" là mở camera ngay, bấm "Kết quả" xem bài đã chấm
+function examCard(e,n){const P=esc(JSON.stringify({id:e.id})),PA=esc(JSON.stringify({id:e.id,auto:1})),nk=Object.keys(e.keys).length;
+ return`<div class="ecard"><button class="eh" data-go="exam" data-p='${P}'><b>${esc(e.name)}</b>
+  <span class="em">${esc(TPLS[e.tpl].short)} · ${nk?nk+' mã đề':'<i>chưa có đáp án</i>'} · <strong>${n}</strong> bài đã chấm</span><span class="chev">${ICON.chev}</span></button>
+  <div class="ea"><button class="btn pri" data-go="scan" data-p='${PA}'>${ICON.cam} Chấm bài</button><button class="btn" data-go="results" data-p='${P}'>${ICON.img} Kết quả</button></div></div>`;}
 V.home=async()=>{
- const nr=S.exams.length;let nb=0;for(const e of S.exams)nb+=(await DB.byExam(e.id)).length;
+ const counts={};let nb=0;for(const e of S.exams){counts[e.id]=(await DB.byExam(e.id)).length;nb+=counts[e.id];}
+ const recent=[...S.exams].sort((a,b)=>(b.created||0)-(a.created||0)).slice(0,6);
  return{title:'ChamthiQM',html:`
- <section class="hero"><div class="ey">Chấm trắc nghiệm · cấu trúc 2025</div><div class="t">Quét phiếu,<br>có điểm ngay.</div><div class="s">Đặt phiếu dưới camera, app tự căn chỉnh, chấm và lưu vào từng bài kiểm tra.</div>
- <div class="stats num"><div><b>${nr}</b><span>bài kiểm tra</span></div><div><b>${nb}</b><span>bài đã chấm</span></div><div><b>${S.classes.length}</b><span>lớp học</span></div></div></section>
  ${DB.mem?'<div class="warnbox">Trình duyệt này không cho lưu dữ liệu lâu dài. Bài chấm chỉ giữ đến khi đóng trang, hãy xuất kết quả trước khi thoát.</div>':''}
+ <div class="sech"><h2>Bài kiểm tra</h2><button class="btn pri sm" id="hNew">+ Tạo mới</button></div>
+ ${recent.length?recent.map(e=>examCard(e,counts[e.id])).join(''):`<div class="empty"><b>Chưa có bài kiểm tra nào</b><span>Tạo bài kiểm tra, nhập đáp án, rồi bấm Chấm bài để quét phiếu bằng camera.</span></div>`}
+ ${S.exams.length>recent.length?`<button class="btn" data-go="exams">Xem tất cả ${S.exams.length} bài kiểm tra</button>`:''}
  <div class="menu">
- ${mi('list','Danh sách chấm',nr?nr+' bài kiểm tra':'Tạo bài kiểm tra đầu tiên','exams')}
- ${mi('sheet','Tải phiếu trả lời','6 mẫu theo nhóm môn, trọn trang hoặc nửa trang A4','sheets')}
+ ${mi('list','Danh sách chấm',S.exams.length+' bài kiểm tra · '+nb+' bài đã chấm','exams')}
+ ${mi('sheet','Tải phiếu trả lời','Phiếu mẫu để in cho học sinh','sheets')}
  ${mi('class','Lớp học',S.classes.length?S.classes.length+' lớp':'Danh sách học sinh theo SBD','classes')}
- </div>
- <div class="menu">
- ${mi('gear','Cài đặt & sao lưu','Độ nhạy nhận dạng, sao lưu dữ liệu','settings')}
+ ${mi('gear','Cài đặt & sao lưu','Độ nhạy, sao lưu dữ liệu','settings')}
  ${mi('help','Hướng dẫn','Từ in phiếu đến xuất bảng điểm','guide')}
- </div>`};
+ </div>`,after(){$('#hNew').onclick=newExamMenu;}};
 };
 
 /* ---------- Danh sách bài kiểm tra ---------- */
 V.exams=async()=>{
  const counts={};for(const e of S.exams)counts[e.id]=(await DB.byExam(e.id)).length;
- const cards=S.exams.map(e=>`<button class="card tap" data-go="exam" data-p='${esc(JSON.stringify({id:e.id}))}'>
-  <h3>${esc(e.name)}</h3><div class="meta"><span>${esc(e.createdStr||'')}</span><span>Phiếu: ${esc(TPLS[e.tpl].short)}</span></div>
-  <div class="meta num"><span>Số câu: ${e.n1}; ${e.n2}; ${e.n3}</span><span>${Object.keys(e.keys).length} mã đề</span><span>${counts[e.id]} bài đã chấm</span>${exClsIds(e).length?`<span>Lớp ${esc(exClsIds(e).map(id=>clsById(id).name).join(', '))}</span>`:''}</div></button>`).join('');
+ const cards=S.exams.map(e=>examCard(e,counts[e.id])).join('');
  return{title:'Danh sách chấm',html:cards||`<div class="empty"><b>Chưa có bài kiểm tra nào</b><span>Mỗi bài kiểm tra là một thư mục riêng chứa đáp án, ảnh bài làm và bảng điểm.</span><button class="btn pri" data-go="examForm">Tạo bài kiểm tra</button><label class="btn" for="fXls" id="fromShuf" role="button">Tạo từ file đáp án app xáo đề</label></div>`,
   fab:{label:'Tạo bài kiểm tra',fn:newExamMenu},after(){const b=$('#fromShuf');if(b)b.onclick=()=>pickFile('fXls',f=>fromShuffler(f[0]));}};
 };
@@ -1302,7 +1325,8 @@ V.exam=async(p)=>{window.__autoLive=true;
  const rs=await DB.byExam(e.id),nk=Object.keys(e.keys).length,cl=exClsIds(e).map(clsById),P={id:e.id};
  return{title:e.name,act:`<button class="act" data-go="examForm" data-p='${esc(JSON.stringify(P))}'>Sửa</button>`,html:`
  <div class="card"><div class="meta num"><span>Phiếu mẫu ${TPLS[e.tpl].code} · ${esc(TPLS[e.tpl].short)}</span><span>Số câu: ${e.n1}; ${e.n2}; ${e.n3}</span><span>Điểm tối đa ${fmt(e.scale10?10:examMax(e))}</span></div><div class="meta num">${e.n1?`<span>P1: ${fmt(e.p1pt)}/câu</span>`:''}${e.n2?`<span>P2: ${p2of(e).map(fmt).join(' · ')}</span>`:''}${e.n3?`<span>P3: ${fmt(e.p3pt)}/câu</span>`:''}${e.noSbd?'<span>Không quét SBD</span>':''}</div></div>
- ${!nk?'<div class="warnbox">Bước tiếp theo: nhập đáp án cho từng mã đề, sau đó vào Chấm bài để quét.</div>':''}
+ ${!nk?'<div class="warnbox">Bước tiếp theo: nhập đáp án cho từng mã đề, sau đó bấm Chấm bài để quét.</div>':''}
+ <div class="ea big"><button class="btn pri" data-go="scan" data-p='${esc(JSON.stringify({id:e.id,auto:1}))}'>${ICON.cam} Chấm bài</button><button class="btn" data-go="results" data-p='${esc(JSON.stringify(P))}'>${ICON.img} Kết quả (${rs.length})</button></div>
  <div class="menu">
  ${mi('key','Đáp án',nk?nk+' mã đề: '+Object.keys(e.keys).sort().join(', '):'Chưa có đáp án','keys',P)}
  ${mi('cam','Chấm bài','Chụp phiếu, có điểm ngay','scan',P)}
@@ -1535,7 +1559,7 @@ function showKeyQR(e){
 /* ---------- Mã QR tra điểm cho học sinh ---------- */
 function appBase(){try{const v=localStorage.getItem('ct_base');if(v)return v;}catch(e){}
  if(/^https?:$/.test(location.protocol)&&!/claude\.(ai|site|com)|claudeusercontent|androidplatform\.net|localhost/.test(location.hostname))return location.origin+location.pathname;return DEFAULT_BASE;}
-const BUILD='11/11/2026 19:46';
+const BUILD='11/11/2026 19:59';
 const DEFAULT_BASE='https://hatthi32.github.io/CHAMTHI-TN/';
 const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const unb64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
@@ -1601,6 +1625,7 @@ async function viewerBoot(){
 /* ---------- Chấm bài ---------- */
 let session={examId:null,count:0,last:null};
 V.scan=async(p)=>{
+ if(p.auto)window.__autoLive=true;
  const e=exById(p.id);if(session.examId!==e.id)session={examId:e.id,count:0,last:null};
  const nk=Object.keys(e.keys).length;
  return{title:'Chấm bài · '+e.name,html:`
@@ -1637,7 +1662,7 @@ async function scanOne(e,file){
  return saveAnalysis(e,A);}
 async function saveAnalysis(e,A){
  const imgId=uid(),blob=await canvasBlob(A.disp,'image/jpeg',0.8);await DB.put('images',{id:imgId,blob});
- const cr=lay(A.tplId).F.crop,crop=document.createElement('canvas');crop.width=560;crop.height=Math.round(560*cr[3]/cr[2]);{const kd=A.disp.width/lay(A.tplId).F.W;crop.getContext('2d').drawImage(A.disp,cr[0]*kd,cr[1]*kd,cr[2]*kd,cr[3]*kd,0,0,crop.width,crop.height);}
+ const cr=lay(A.tplId).F.crop,crop=document.createElement('canvas');crop.width=1100;crop.height=Math.round(1100*cr[3]/cr[2]);{const kd=A.disp.width/lay(A.tplId).F.W;crop.getContext('2d').drawImage(A.disp,cr[0]*kd,cr[1]*kd,cr[2]*kd,cr[3]*kd,0,0,crop.width,crop.height);}
  const res={id:uid(),examId:e.id,time:Date.now(),timeStr:nowStr(),ans:A.ans,offs:A.offs,flags:A.flags||[],unsure:A.unsure||[],rs:A.rs||1,imgId,crop:crop.toDataURL('image/jpeg',0.75)};
  res.score=grade(e,res.ans);res.name=nameFor(e,res.ans.sbd);res.cls=(stuOf(e,res.ans.sbd)||{}).cls||'';const all=await DB.byExam(e.id);res.issues=issuesOf(e,res,all.concat([res]));
  await DB.put('results',res);
@@ -1711,8 +1736,8 @@ async function startLive(e){
  catch(err){return liveUnavailable(err);}
  const ov=document.createElement('div');ov.className='live';setScanOrientation(true);
  ov.innerHTML=`<video playsinline muted autoplay></video><canvas class="lov"></canvas>
-  <div class="ltop"><span class="lst" id="lSt">Đang mở camera…</span><span class="lcnt" id="lCnt">${session.count} bài</span></div>
-  <div class="lbot"><div id="lRes" class="lres" hidden></div><div class="row" style="flex-wrap:nowrap"><button class="btn big grow" id="lStop">Dừng quét</button><button class="btn big pri grow" id="lShot">Chụp ngay</button></div></div>`;
+  <div class="lside"><div class="ltop"><span class="lst" id="lSt">Đang mở camera…</span><span class="lcnt" id="lCnt">${session.count} bài</span></div>
+  <div class="lbot"><div id="lRes" class="lres" hidden></div><div class="row lbtn" style="flex-wrap:nowrap"><button class="btn big grow" id="lStop">Dừng quét</button><button class="btn big pri grow" id="lShot">Chụp ngay</button></div></div></div>`;
  document.body.appendChild(ov);
  const video=ov.querySelector('video'),cv=ov.querySelector('.lov'),cx=cv.getContext('2d'),st=ov.querySelector('#lSt');
  video.srcObject=stream;try{await video.play();}catch(x){}
@@ -1791,7 +1816,7 @@ async function startLive(e){
 /* ---------- Bài đã chấm ---------- */
 let resOrder={eid:null,ids:[]};
 const ZOOMI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M10.5 7.5v6M7.5 10.5h6"/></svg>';
-const partLine=(e,s)=>[e.n1?`P1 <b>${s.p1c}/${e.n1}</b> = ${fmt(s.s1)}`:'',e.n2?`P2 <b>${s.p2c.join('·')}</b> = ${fmt(s.s2)}`:'',e.n3?`P3 <b>${s.p3c}/${e.n3}</b> = ${fmt(s.s3)}`:''].filter(Boolean).join('<i>|</i>');
+const partLine=(e,s)=>[e.n1?`P1 <b>${s.p1c}/${e.n1}</b> = ${fmt(s.s1)}`:'',e.n2?`P2 <b>${s.p2c.join('·')}</b> = ${fmt(s.s2)}`:'',e.n3?`P3 <b>${s.p3c}/${e.n3}</b> = ${fmt(s.s3)}`:''].filter(Boolean).map(x=>`<span style="white-space:nowrap">${x}</span>`).join('<i>|</i>');
 // Bảng chi tiết từng câu: xanh = đúng, đỏ = sai (kèm đáp án đúng), vàng = bỏ trống / tô nhiều / chưa chắc
 function qDetail(e,r){const key=e.keys[r.ans.made];if(!key)return'';const a=r.ans,uns=new Set(r.unsure||[]);
  const cls=(mk,ok,nm)=>uns.has(nm)||!mk||mk.length>1||mk.includes('?')?'w':ok?'g':'r';
@@ -1846,8 +1871,11 @@ V.results=async(p)=>{
  const sorts={new:(a,b)=>b.time-a.time,sbd:(a,b)=>a.ans.sbd.localeCompare(b.ans.sbd),hi:(a,b)=>(b.score?b.score.total:-1)-(a.score?a.score.total:-1),lo:(a,b)=>(a.score?a.score.total:99)-(b.score?b.score.total:99)};
  rs.sort(sorts[so]);resOrder={eid:e.id,ids:rs.map(r=>r.id)};
  const rows=rs.map(r=>`<button class="res" data-go="result" data-p='${esc(JSON.stringify({id:e.id,rid:r.id}))}'>
-  <img src="${r.crop}" alt="Phần họ tên trên phiếu SBD ${esc(sbdTxt(r))}"><span class="rs"><span class="num">SBD ${esc(sbdTxt(r))}</span><span class="num">Mã đề ${esc(r.ans.made)}</span><span class="score">${r.score?fmt(r.score.total):'–'}</span></span>
-  ${r.score?`<span class="pp num">${partLine(e,r.score)}</span>`:''}<span class="nm">${dn(r)?`<b style="color:var(--ink)">${esc(dn(r))}</b>${!r.name&&!r.nameManual&&r.nameAI?'<span class="pill">AI đọc</span>':''}`:''}${dl(r)?`<span class="pill">${esc(dl(r))}</span>`:''}${r.issues.map(i=>`<span class="pill ${critical(i)?'bad':'warn'}">${esc(i)}</span>`).join('')}</span></button>`).join('');
+  <span class="rimg"><img src="${r.crop}" alt="Phần họ tên trên phiếu SBD ${esc(sbdTxt(r))}"></span>
+  <span class="rsc ${r.score?(r.score.total>=(e.scale10?10:examMax(e))/2?'hi':''):'na'}">${r.score?fmt(r.score.total):'–'}<small>điểm</small></span>
+  <span class="rnm">${dn(r)?esc(dn(r)):'<i>Chưa có tên</i>'}${!r.name&&!r.nameManual&&r.nameAI&&dn(r)?' <span class="pill">AI đọc</span>':''}</span>
+  <span class="rmt num"><span>SBD <b>${esc(sbdTxt(r))}</b></span><span>Mã đề <b>${esc(r.ans.made)}</b></span>${dl(r)?`<span>Lớp <b>${esc(dl(r))}</b></span>`:''}</span>
+  ${r.score?`<span class="pp num">${partLine(e,r.score)}</span>`:''}${r.issues.length?`<span class="nm">${r.issues.map(i=>`<span class="pill ${critical(i)?'bad':'warn'}">${esc(i)}</span>`).join('')}</span>`:''}</button>`).join('');
  const P=x=>esc(JSON.stringify({...p,...x}));
  return{title:'Bài đã chấm · '+e.name,html:`
  <div class="row"><label class="f grow">Lọc<select class="in" id="rF"><option value="all">Tất cả</option><option value="issue"${f==='issue'?' selected':''}>Cần kiểm tra</option>${mades.map(m=>`<option value="${esc(m)}"${f===m?' selected':''}>Mã đề ${esc(m)}</option>`).join('')}</select></label>
