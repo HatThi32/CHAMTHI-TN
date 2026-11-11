@@ -84,6 +84,7 @@ input.in:focus,select.in:focus,textarea.in:focus{outline:2px solid var(--accent)
 .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .lbl{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);margin-top:4px}
 .tplpick{display:flex;flex-direction:column;gap:8px}
+.chip.dis{opacity:.4}
 .tplopt{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;background:var(--surface)}
 .tplopt input{margin-top:4px;accent-color:var(--accent);width:18px;height:18px}
 .tplopt.on{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
@@ -687,19 +688,39 @@ const TPLS={
  xh:{id:'xh',code:3,fmt:'a5',fn:'Su-Tin-CN-KTPL',short:'Sử – Tin – CN – KTPL',subjects:'Lịch sử · Tin học · Công nghệ · GD KT&PL',p1:24,p2:4,p3:0,p3pt:0.25},
  tong:{id:'tong',code:5,fn:'Tong-hop',short:'Tổng hợp',subjects:'Mọi môn · kiểm tra thường xuyên, số câu tùy chọn',p1:40,p2:8,p3:6,p3pt:0.25},
  tx:{id:'tx',code:6,fmt:'a5',fn:'Tong-hop-nua-trang',short:'Tổng hợp nửa trang',subjects:'Mọi môn · kiểm tra thường xuyên, không có Phần III',p1:40,p2:8,p3:0,p3pt:0.25},
+ qm:{id:'qm',code:101,fmt:'qm',external:true,fn:'QM-2025-Su-Tin-CN-GDPL',short:'Phiếu QM 2025 – Sử, Tin, CN, GDPL',subjects:'Phiếu in sẵn của app Chấm Thi QM (chỉ quét, không tải mẫu): mã đề 3 số',p1:24,p2:6,p3:0,p3pt:0.25,madeCols:3},
  nn:{id:'nn',code:4,fmt:'a5',fn:'Ngoai-ngu',short:'Ngoại ngữ',subjects:'Tiếng Anh và các môn ngoại ngữ',p1:40,p2:0,p3:0,p3pt:0.25},
 };
-const TPL_IDS=['tong','tx','toan','khtn','xh','nn'];
+const TPL_IDS=['tong','tx','toan','khtn','xh','nn','qm'];
+const OWN_IDS=TPL_IDS.filter(id=>!TPLS[id].external);
 const RB=2.1; // bán kính ô tô (mm)
 // Khổ phiếu: A4 đứng, hoặc nửa A4 (in 2 phiếu một tờ rồi cắt đôi). MK: tâm 4 ô định vị theo chiều kim đồng hồ; CODE: ô neo + 3 bit mã mẫu
 const FMT={
  a4:{id:'a4',W:210,H:297,MK:[[13,13],[197,13],[197,284],[13,284]],mks:7,CODE:[[81,284],[93,284],[105,284],[117,284]],cds:4,ring:4.5,crop:[12,24,186,15]},
+ // Phiếu QM 2025 (Sử, Tin, CN, GDPL) của app Chấm Thi QM: đo từ phiếu thật, đơn vị quy đổi để ô tròn cùng cỡ với phiếu của app.
+ // Không có ô mã mẫu phiếu; nhận diện bằng 13 ô vuông nhỏ ở góc các phần.
+ qm:{id:'qm',W:235.5,H:131.8,MK:[[12.8,12.8],[222.72,12.8],[222.72,119.04],[12.8,119.04]],mks:5.9,CODE:[],cds:3.3,ring:3.5,crop:[32,13.4,134.4,15.4],
+  marks:[[87.95,49.09],[115.71,49.24],[188.88,55.05],[148.84,55.23],[19.88,59.52],[45.43,59.46],[148.75,81],[188.85,81.02],[45.44,115.66],[188.47,115.52],[87.56,115.92],[115.57,115.79],[148.86,115.8]],
+  grid:{made:[[25.18,64.78],[4.77,0.03],[0.02,5.07]],sbd:[[50.68,64.63],[4.91,0],[-0.02,5.13]],p1:[[[93.52,54.33],[4.92,-0.01],[-0.03,5.11]],[[121.04,54.27],[4.9,0],[0,5.11]]],
+   p2:[[154.39,60.26],[172.04,60.33],[194.19,60.43],[210.81,60.27],[154.25,95.28],[171.91,95.32]],p2UV:[[4.92,0],[0,5.13]]}},
  a5:{id:'a5',W:210,H:148.5,MK:[[11,10],[199,10],[199,138.5],[11,138.5]],mks:6,CODE:[[82,138.5],[92,138.5],[102,138.5],[112,138.5]],cds:3.5,ring:3.7,crop:[12,14.5,186,9]},
 };
 const fmtOf=t=>FMT[t.fmt||'a4'];
 const LETTERS='ABCD';
 
+function buildQM(t){
+ const F=fmtOf(t),G=F.grid,L={t,F,made:[],sbd:[],p1:[],p2:[],p3:[],blocks:[],blk:[],ops:[]};
+ let blk=-1;const newBlk=(kind,a,b)=>{L.blocks.push([]);L.blk.push({kind,a,b});return ++blk};
+ const at=([O,U,V],i,j)=>[O[0]+i*U[0]+j*V[0],O[1]+i*U[1]+j*V[1]];
+ const bub=([x,y],kind,qi)=>{const b={x,y,b:blk,kind,qi};L.blocks[blk].push(b);return b};
+ newBlk('made');for(let i=0;i<3;i++){L.made.push([]);for(let d=0;d<10;d++)L.made[i].push(bub(at(G.made,i,d),'made',i));}
+ newBlk('sbd');for(let i=0;i<6;i++){L.sbd.push([]);for(let d=0;d<10;d++)L.sbd[i].push(bub(at(G.sbd,i,d),'sbd',i));}
+ G.p1.forEach((g,k)=>{newBlk('p1',k*12,k*12+11);for(let r=0;r<12;r++){const q=k*12+r;L.p1[q]=[0,1,2,3].map(i=>bub(at(g,i,r),'p1',q));}});
+ G.p2.forEach((O,k)=>{newBlk('p2',k,k);const g=[O,G.p2UV[0],G.p2UV[1]];L.p2.push([0,1,2,3].map(r=>[bub(at(g,0,r),'p2',k),bub(at(g,1,r),'p2',k)]));});
+ return L;
+}
 function buildSheet(t){
+ if(t.fmt==='qm')return buildQM(t);
  const F=fmtOf(t),half=F.id==='a5';
  const ops=[],L={t,F,made:[],sbd:[],p1:[],p2:[],p3:[],blocks:[],blk:[]};
  const box=(x,y,w,h,lw=0.3)=>ops.push({k:'box',x,y,w,h,lw});
@@ -872,6 +893,13 @@ function readCode(g,w,h,H,F){
  let code=0;for(let i=1;i<4;i++){const f=fills[i];if(f>0.45)code=code*2+1;else if(f<0.22)code=code*2;else return -1;}
  return TPL_IDS.some(id=>TPLS[id].code===code&&fmtOf(TPLS[id])===F)?code:-1;
 }
+// Phiếu QM: 13 ô vuông nhỏ phải đen, xung quanh trắng (sai chiều xoay thì không khớp)
+function readQM(g,w,h,H,F){
+ const sq=(mx,my,hs)=>{let t=0,n=0;for(let i=-2;i<=2;i++)for(let j=-2;j<=2;j++){const[p,q]=hp(H,mx+i*hs/2,my+j*hs/2);t+=bil(g,w,h,p,q);n++;}return t/n;};
+ let ok=0;for(const [x,y] of F.marks){const inner=sq(x,y,0.9),d=3;const ring=[[0,-d],[0,d],[-d,0],[d,0],[-d,-d],[d,-d],[-d,d],[d,d]].map(([dx,dy])=>sq(x+dx,y+dy,0.5)).sort((a,b)=>b-a);
+  const white=ring[2];if((white-inner)/Math.max(white,1)>0.4)ok++;}
+ return ok>=11?101:-1;
+}
 function warpGray(g,w,h,H,K,F){const W=Math.round(F.W*K),HH=Math.round(F.H*K),out=new Uint8Array(W*HH),k=1/K,w1=w-1,h1=h-1;
  for(let v=0;v<HH;v++){const y=(v+0.5)*k;let x=0.5*k;let nx=H[0]*x+H[1]*y+H[2],ny=H[3]*x+H[4]*y+H[5],dd=H[6]*x+H[7]*y+H[8];const sx=H[0]*k,sy=H[3]*k,sd=H[6]*k;let o=v*W;
   for(let u=0;u<W;u++,nx+=sx,ny+=sy,dd+=sd,o++){const px=nx/dd-0.5,py=ny/dd-0.5;if(px<0||py<0||px>=w1||py>=h1){out[o]=255;continue;}
@@ -906,14 +934,20 @@ function readFills(R,L){
    // giấy cong/vênh: tinh chỉnh vị trí riêng từng ô trong phạm vi ±0,75 mm quanh độ lệch của cả khối
    let bx=best[0],by=best[1],bvv=ringDark(R,b.x+bx,b.y+by);
    for(let dx=-0.75;dx<=0.76;dx+=0.25)for(let dy=-0.75;dy<=0.76;dy+=0.25){const v=ringDark(R,b.x+best[0]+dx,b.y+best[1]+dy);if(v>bvv*1.02){bvv=v;bx=best[0]+dx;by=best[1]+dy;}}
-   ringC.set(b,(white-(255-bvv/36))/white);
    const cx=(b.x+bx)*K,cy=(b.y+by)*K;let t=0,m=0;
+   // nền giấy ngay quanh ô (bóng tay/điện thoại đổ lên một góc phiếu làm giấy tối hơn chỗ khác)
+   const lw=[];for(let k=0;k<8;k++){const a=k*Math.PI/4+Math.PI/8,px=cx+Math.cos(a)*(RB+1.15)*K,py=cy+Math.sin(a)*(RB+1.15)*K;let s2=0,c2=0;
+    for(let v=Math.round(py-1);v<=Math.round(py+1);v++)for(let u=Math.round(px-1);u<=Math.round(px+1);u++)if(u>=0&&v>=0&&u<R.W&&v<R.H){s2+=R.g[v*R.W+u];c2++;}lw.push(c2?s2/c2:white);}
+   lw.sort((a,b)=>a-b);const we=Math.max(40,Math.min(white,lw[5]));
+   ringC.set(b,(white-(255-bvv/36))/white);
    for(let v=Math.floor(cy-rin);v<=Math.ceil(cy+rin);v++)for(let u=Math.floor(cx-rin);u<=Math.ceil(cx+rin);u++){if((u-cx)**2+(v-cy)**2>rin*rin||u<0||v<0||u>=R.W||v>=R.H)continue;t+=R.g[v*R.W+u];m++;}
-   const inner=m?t/m:255;fills.set(b,Math.max(0,Math.min(1,(white-inner)/white)));}
+   const inner=m?t/m:255;fills.set(b,Math.max(0,Math.min(1,(we-inner)/we)));}
  });
  return{offs,fills,ringC,quality};
 }
-function pick(arr,fills,T){const f=arr.map(b=>b?fills.get(b):0);const mx=Math.max(...f);if(mx<T)return[];return f.map((v,i)=>v>=T&&v>=0.55*mx?i:-1).filter(i=>i>=0);}
+// Ngưỡng cho từng câu: một ô tô nhạt (bút chì nhạt) mà các ô còn lại trong câu sạch trơn thì vẫn là ô được chọn
+function grpTh(f,T){let s0=0,s1=0;for(const v of f){if(v>s0){s1=s0;s0=v;}else if(v>s1)s1=v;}const Tl=Math.max(0.14,0.6*T);return(s0>=Tl&&s1<=0.06&&s0>=3.5*Math.max(s1,0.03))?Math.min(T,Tl):T;}
+function pick(arr,fills,T){const f=arr.map(b=>b?fills.get(b):0);const mx=Math.max(...f);T=grpTh(f,T);if(mx<T)return[];return f.map((v,i)=>v>=T&&v>=0.55*mx?i:-1).filter(i=>i>=0);}
 function readAnswers(L,fills,T){
  const col=arr=>arr.map(c=>{const p=pick(c,fills,T);return p.length===1?String(p[0]):p.length?'?':'_';}).join('');
  const a={made:col(L.made),sbd:col(L.sbd),p1:[],p2:[],p3:[]};
@@ -945,10 +979,10 @@ function analyzeCanvas(cv,ex,hint){const wantTpl=ex?ex.tpl:null;
  if(!m0&&!MQ().length)return{error:'Không thấy đủ 4 ô vuông đen ở 4 góc phiếu. Chụp thẳng từ trên xuống, để lọt cả 4 góc và đặt phiếu trên nền phẳng.'};
  let H=null,code=-1;
  let F=null;
- outer:for(const m of quads())for(const FF of [FMT.a4,FMT.a5])for(let r=0;r<4;r++){const dst=[0,1,2,3].map(i=>m[(i+r)%4]);const Hm=homography(FF.MK,dst);if(!Hm)continue;const c=readCode(g,w,h,Hm,FF);if(c>0){H=Hm;code=c;F=FF;break outer;}}
+ outer:for(const m of quads())for(const FF of [FMT.a4,FMT.a5,FMT.qm])for(let r=0;r<4;r++){const dst=[0,1,2,3].map(i=>m[(i+r)%4]);const Hm=homography(FF.MK,dst);if(!Hm)continue;const c=FF.marks?readQM(g,w,h,Hm,FF):readCode(g,w,h,Hm,FF);if(c>0){H=Hm;code=c;F=FF;break outer;}}
  if(!H)return{error:'Không đọc được ô mã mẫu phiếu ở cạnh dưới phiếu. Kiểm tra cạnh dưới có bị ngón tay che, bị lóa đèn không; phiếu nửa trang phải cắt rời trước khi quét.'};
  const tplId=TPL_IDS.find(id=>TPLS[id].code===code);
- if(wantTpl&&tplId!==wantTpl)return{error:`Đây là phiếu mẫu ${code} (${TPLS[tplId].short}), nhưng bài kiểm tra này dùng mẫu ${TPLS[wantTpl].code} (${TPLS[wantTpl].short}).`};
+ if(wantTpl&&tplId!==wantTpl){const nm=T=>T.external?T.short:`mẫu ${T.code} (${T.short})`;return{error:`Đây là ${nm(TPLS[tplId])}, nhưng bài kiểm tra này dùng ${nm(TPLS[wantTpl])}. Vào Sửa bài kiểm tra để đổi mẫu phiếu nếu cần.`};}
  // Đọc ô tô trên kênh màu đỏ: mực xanh/đen và bút chì đậm rõ, nét bút đỏ chấm bài của giáo viên gần như biến mất
  const gr=new Uint8Array(w*h);for(let i=0,j=0;i<gr.length;i++,j+=4)gr[i]=id.data[j];
  const L=lay(tplId),R=warpGray(gr,w,h,H,5,F);
@@ -975,7 +1009,9 @@ function analyzeCanvas(cv,ex,hint){const wantTpl=ex?ex.tpl:null;
  // 2) Ô không chắc chắn: độ đậm nằm trong vùng lưng chừng quanh ngưỡng → không được tự cho điểm
  const unsure=[];
  const chk=(arr,nm)=>{const f=arr.filter(Boolean).map(b=>fills.get(b)).sort((a,b)=>b-a),s0=f[0]||0,s1=f[1]||0;
-  let u=false;if(s0<T)u=s0>T-M;else u=s0<T+M||(s1>=T-M&&s1<Math.max(T+M,0.55*s0+M));if(u)unsure.push(nm);};
+  const Te=grpTh(f,T),low=Te<T;
+  // vết tẩy mờ hơn hẳn ô đậm nhất (dưới 40%) không gây nghi ngờ; chỉ nghi khi hai ô gần ngang nhau
+  let u=false;if(s0<Te)u=s0>Te-M;else u=(!low&&s0<Te+M)||(s1>=Te-M&&s1>=0.4*s0&&s1<Math.max(Te+M,0.55*s0+M));if(u)unsure.push(nm);};
  L.made.forEach(c=>chk(c,'Mã đề'));if(!ex||!ex.noSbd)L.sbd.forEach(c=>chk(c,'Số báo danh'));
  L.p1.forEach((q,i)=>{if(!ex||i<ex.n1)chk(q,'Phần I câu '+(i+1));});
  L.p2.forEach((q,i)=>{if(!ex||i<ex.n2)q.forEach((r,j)=>chk(r,`Phần II câu ${i+1}${'abcd'[j]}`));});
@@ -1196,7 +1232,7 @@ function fromShufflerSheets(sheets,fname){
 }
 V.examForm=async(p)=>{
  const e=p.id?exById(p.id):null,pre=e?null:(p.pre||null),src=e||pre,t=src?src.tpl:'tong';
- const tplOpts=TPL_IDS.map(id=>{const T=TPLS[id];return`<label class="tplopt${id===t?' on':''}"><input type="radio" name="tpl" value="${id}"${id===t?' checked':''}${e&&Object.keys(e.keys).length&&id!==t?' disabled':''}><span><b>Mẫu ${T.code} · ${esc(T.short)}</b><span>${esc(T.subjects)} — ${T.p1}; ${T.p2}; ${T.p3} câu</span></span></label>`}).join('');
+ const tplOpts=TPL_IDS.map(id=>{const T=TPLS[id];return`<label class="tplopt${id===t?' on':''}"><input type="radio" name="tpl" value="${id}"${id===t?' checked':''}${e&&Object.keys(e.keys).length&&id!==t?' disabled':''}><span><b>${T.external?'':'Mẫu '+T.code+' · '}${esc(T.short)}</b><span>${esc(T.subjects)} — ${T.p1}; ${T.p2}; ${T.p3} câu</span></span></label>`}).join('');
  const T=TPLS[t];
  return{title:e?'Sửa bài kiểm tra':pre?'Từ file app xáo đề':'Bài kiểm tra mới',html:`
  ${pre?`<div class="okbox">Đã đọc <b>${esc(pre.file)}</b>: ${pre.made.length} mã đề (${esc(pre.made.join(', '))}), số câu ${pre.n1}; ${pre.n2}; ${pre.n3}. App đã chọn sẵn mẫu phiếu và tên bài, kiểm tra lại rồi bấm Tạo bài kiểm tra. Đáp án được nạp ngay.</div>${pre.miss?`<div class="warnbox">File còn ${pre.miss} câu/ý chưa có đáp án.</div>`:''}`:''}
@@ -1222,6 +1258,9 @@ V.examForm=async(p)=>{
  after(){
   const upd=()=>{const id=document.querySelector('input[name=tpl]:checked').value,T=TPLS[id];
    document.querySelectorAll('.tplopt').forEach(o=>o.classList.toggle('on',o.querySelector('input').checked));
+   // phiếu QM chỉ có 3 cột mã đề
+   document.querySelectorAll('#mlPick input').forEach(i=>{const dis=!!T.madeCols&&+i.value>T.madeCols;i.disabled=dis;if(dis&&i.checked){const o=document.querySelector('#mlPick input[value="'+T.madeCols+'"]');o.checked=true;}});
+   document.querySelectorAll('#mlPick .chip').forEach(c=>{c.classList.toggle('on',c.querySelector('input').checked);c.classList.toggle('dis',c.querySelector('input').disabled);});
    $('#capNote').textContent=`Mẫu này chứa tối đa ${T.p1} câu Phần I, ${T.p2} câu Phần II, ${T.p3} câu Phần III.`+(id==='tong'?'':' Cần nhiều câu hơn thì chọn mẫu Tổng hợp.');
    const ex={n1:+$('#n1').value||0,n2:+$('#n2').value||0,n3:+$('#n3').value||0,p1pt:+$('#p1pt').value||0,p3pt:+$('#p3pt').value||0,p2pts:[1,2,3,4].map(k=>+$('#p2k'+k).value||0)};
    $('#maxNote').textContent=`(điểm tối đa hiện tại: ${fmt(examMax(ex))})`;};
@@ -1489,7 +1528,7 @@ function showKeyQR(e){
 /* ---------- Mã QR tra điểm cho học sinh ---------- */
 function appBase(){try{const v=localStorage.getItem('ct_base');if(v)return v;}catch(e){}
  if(/^https?:$/.test(location.protocol)&&!/claude\.(ai|site|com)|claudeusercontent|androidplatform\.net|localhost/.test(location.hostname))return location.origin+location.pathname;return DEFAULT_BASE;}
-const BUILD='10/11/2026 20:34';
+const BUILD='11/11/2026 19:34';
 const DEFAULT_BASE='https://hatthi32.github.io/CHAMTHI-TN/';
 const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const unb64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
@@ -1977,7 +2016,7 @@ V.classEdit=async(p)=>{
 /* ---------- Phiếu trả lời ---------- */
 V.sheets=async()=>({title:'Tải phiếu trả lời',html:`
  <div class="note">Mỗi file là đúng một phiếu, chèn thẳng được vào đề thi (Word, PDF) hoặc in riêng. Ảnh PNG có độ phân giải 300 dpi, giữ đúng kích thước khi chèn: phiếu trọn trang 21 × 29,7 cm, phiếu nửa trang 21 × 14,85 cm. Khi in, chọn tỉ lệ 100% (kích thước thực), không chọn "vừa trang", để app đọc chính xác.</div>
- <div class="thumbs">${TPL_IDS.map(id=>{const T=TPLS[id],half=fmtOf(T).id==='a5';return`<div class="card"><canvas data-th="${id}" width="420" height="${half?297:594}" aria-label="Xem trước phiếu mẫu ${T.code}"></canvas><b>Mẫu ${T.code} · ${esc(T.short)}</b><span class="note">${esc(T.subjects)}<br>Số câu: ${T.p1}; ${T.p2}; ${T.p3}</span><span class="pill${half?' ok':''}">${half?'Nửa trang A4 · 21 × 14,85 cm':'Trọn trang A4 · 21 × 29,7 cm'}</span><button class="btn sm pri" data-pdf="${id}">Tải PDF</button><button class="btn sm" data-png="${id}">Tải ảnh PNG</button></div>`}).join('')}</div>`,
+ <div class="thumbs">${OWN_IDS.map(id=>{const T=TPLS[id],half=fmtOf(T).id==='a5';return`<div class="card"><canvas data-th="${id}" width="420" height="${half?297:594}" aria-label="Xem trước phiếu mẫu ${T.code}"></canvas><b>Mẫu ${T.code} · ${esc(T.short)}</b><span class="note">${esc(T.subjects)}<br>Số câu: ${T.p1}; ${T.p2}; ${T.p3}</span><span class="pill${half?' ok':''}">${half?'Nửa trang A4 · 21 × 14,85 cm':'Trọn trang A4 · 21 × 29,7 cm'}</span><button class="btn sm pri" data-pdf="${id}">Tải PDF</button><button class="btn sm" data-png="${id}">Tải ảnh PNG</button></div>`}).join('')}</div>`,
  async after(){
   await fontsReady();
   document.querySelectorAll('[data-th]').forEach(c=>drawSheet(c.getContext('2d'),lay(c.dataset.th),2));
@@ -2045,6 +2084,6 @@ V.guide=async()=>({title:'Hướng dẫn',html:`
 window.__ctUpdated=()=>{modal(`<h2>App vừa được cập nhật</h2><div class="note">Đã tải bản mới nhất của app ChamthiQM. Tải lại để dùng ngay, dữ liệu vẫn giữ nguyên.</div><div class="row" style="justify-content:flex-end"><button class="btn" data-m="x">Để sau</button><button class="btn pri" data-m="r">Tải lại</button></div>`,a=>{if(a==='r')location.reload();});};
 window.__ctBack=()=>{if(window.__ctBackHook&&window.__ctBackHook())return true;const lv=document.querySelector('.live');if(lv){const b=lv.querySelector('#lStop,#qStop');if(b)b.click();return true;}const md=document.querySelector('.modal');if(md){md.remove();return true;}if(S.stack.length>1){back();return true;}return false;};
 (async()=>{if(location.hash.startsWith('#kq=')){viewerBoot();return;}await DB.open();await loadAll();S.stack=[{v:'home',p:{}}];render();})();
-window.__ct={dbg:{readFills,findMarkers,markerQuads,homography,readCode,warpGray,FMT,toGray,liveGuide,liveHits,liveQuad,deriveMade,issuesOf,drawOverlay},TPLS,lay,drawSheet,analyzeCanvas,grade,eqAns,DB,loadAll,fontsReady};
+window.__ct={dbg:{readFills,readQM,findMarkers,markerQuads,homography,readCode,warpGray,FMT,toGray,liveGuide,liveHits,liveQuad,deriveMade,issuesOf,drawOverlay},TPLS,lay,drawSheet,analyzeCanvas,grade,eqAns,DB,loadAll,fontsReady};
 </script>
 </body></html>
