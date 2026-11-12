@@ -834,12 +834,14 @@ function buildSheet(t){
  let x=grid(12,4,'MÃ ĐỀ',L.made,'made'); x=grid(x+2,6,'SỐ BÁO DANH',L.sbd,'sbd');
  let y=top+gh+(half?3:4);
  if(t.p1){const p1x=x+2,p1w=198-p1x; box(p1x,top,p1w,gh); txt(p1x+p1w/2,top+3.8,'PHẦN I. Trắc nghiệm nhiều phương án lựa chọn',8,true,'center');
-  const nc=Math.ceil(t.p1/10),nr=Math.ceil(t.p1/nc),colw=p1w/4,x0=p1x+(p1w-nc*colw)/2,rs1=nr>1?Math.min(7,rs*9/(nr-1)):0;
+  // Ít câu (Toán 12 câu, KHTN 18 câu): chia đều 3 cột, giãn dòng và căn giữa theo chiều cao khung cho cân đối
+  const few=t.p1<=18&&!t.legacy,nc=few?(t.p1<=12?2:3):Math.ceil(t.p1/10),nr=Math.ceil(t.p1/nc),colw=few?p1w/nc:p1w/4,x0=p1x+(p1w-nc*colw)/2+(few?(colw-28.5)/2-2:0);
+  const availH=gh-dg0-5,rs1=nr>1?(few?Math.min(9,availH/(nr-1)):Math.min(7,rs*9/(nr-1))):0,y00=top+dg0+(few?Math.max(0,(availH-(nr-1)*rs1)/2):0);
   for(let k=0;k<nc;k++){const cx=x0+k*colw; newBlk('p1',k*nr,Math.min(t.p1,(k+1)*nr)-1);
-   for(let i=0;i<4;i++) txt(cx+10.5+i*5.3,top+dg0-7.2,LETTERS[i],7.5,true,'center');
-   for(let r=0;r<nr;r++){const q=k*nr+r; if(q>=t.p1) break; const yy=top+dg0+r*rs1;
+   for(let i=0;i<4;i++) txt(cx+10.5+i*5.3,y00-7.2,LETTERS[i],7.5,true,'center');
+   for(let r=0;r<nr;r++){const q=k*nr+r; if(q>=t.p1) break; const yy=y00+r*rs1;
     txt(cx+7,yy,String(q+1),7.5,true,'right'); L.p1[q]=[0,1,2,3].map(i=>{const b=bub(cx+10.5+i*5.3,yy);b.kind='p1';b.qi=q;return b});}
-   if(k) line(cx,top+8,cx,top+gh-2);}
+   if(k) line(few?p1x+k*p1w/nc:cx,top+8,few?p1x+k*p1w/nc:cx,top+gh-2);}
  }
  if(t.p2){const t2=y,ph=half?35:42,r0=half?17:19,rs2=half?5:rs; box(12,t2,186,ph); txt(105,t2+3.8,'PHẦN II. Trắc nghiệm đúng sai   (Đ: Đúng – S: Sai)',8,true,'center');
   const bw=186/Math.max(t.p2,4),x00=12+(186-t.p2*bw)/2;
@@ -870,6 +872,8 @@ function buildSheet(t){
   if(t.p3) txt(12,y+14.5,'• Phần III: tô từ cột bên trái, mỗi cột một ký tự, viết đáp án vào ô trống phía trên. Ví dụ: −1,5   12,5   0,25   2025.',6.5,false,'left',g);}
  L.ops=ops; return L;
 }
+// Bản bố cục cũ của Mẫu 1, Mẫu 2 (trước 12/11/2026): vẫn chấm được phiếu đã in theo bản cũ
+TPLS.toan0={...TPLS.toan,id:'toan0',legacy:true};TPLS.khtn0={...TPLS.khtn,id:'khtn0',legacy:true};
 const LAY={}; const lay=id=>LAY[id]||(LAY[id]=buildSheet(TPLS[id]));
 
 function drawSheet(ctx,L,K){
@@ -1064,8 +1068,11 @@ function analyzeCanvas(cv,ex,hint){const wantTpl=ex?ex.tpl:null;
  if(wantTpl&&tplId!==wantTpl){const nm=T=>T.external?T.short:`mẫu ${T.code} (${T.short})`;return{error:`Đây là ${nm(TPLS[tplId])}, nhưng bài kiểm tra này dùng ${nm(TPLS[wantTpl])}. Vào Sửa bài kiểm tra để đổi mẫu phiếu nếu cần.`};}
  // Đọc ô tô trên kênh màu đỏ: mực xanh/đen và bút chì đậm rõ, nét bút đỏ chấm bài của giáo viên gần như biến mất
  const gr=new Uint8Array(w*h);for(let i=0,j=0;i<gr.length;i++,j+=4)gr[i]=id.data[j];
- const L=lay(tplId),R=warpGray(gr,w,h,H,5,F);
- const {offs,fills,ringC,quality,rs}=readFills(R,L);
+ const R=warpGray(gr,w,h,H,5,F);let L=lay(tplId),lv=0;
+ let {offs,fills,ringC,quality,rs}=readFills(R,L);
+ // Mẫu 1/2: thử cả bố cục cũ, lấy bố cục có viền ô tròn Phần I khớp rõ hơn
+ if(TPLS[tplId+'0']){const L0=lay(tplId+'0'),r0=readFills(R,L0);const md=(LL,rc)=>{const v=LL.p1.flat().map(b=>rc.get(b)).sort((a,b)=>a-b);return v[v.length>>1]||0;};
+  if(md(L0,r0.ringC)>md(L,ringC)*1.15){L=L0;lv=1;({offs,fills,ringC,quality,rs}=r0);}}
  // 1) ánh sáng & lóa: viền ô tròn phải thấy rõ ở mọi ô cần đọc
  const usedB=[];L.blocks.forEach((bs,bi)=>{if(bs.some(b=>usedBubble(ex,b)))usedB.push(bi);});
  const whites=usedB.map(bi=>quality[bi].white).sort((a,b)=>a-b),medW=whites[whites.length>>1]||255;
@@ -1097,7 +1104,7 @@ function analyzeCanvas(cv,ex,hint){const wantTpl=ex?ex.tpl:null;
  L.p3.forEach((q,i)=>{if(ex&&i>=ex.n3)return;for(let j=0;j<4;j++){const o=[];if(j===0)o.push(q.minus);if(q.comma[j])o.push(q.comma[j]);o.push(...q.digits[j]);chk(o,'Phần III câu '+(i+1));}});
  const flags=[];const uu=[...new Set(unsure)];
  const disp=warpRGB(id.data,w,h,H,6,F);
- return{tplId,ans,offs,disp,flags,unsure:uu,rs};
+ return{tplId,ans,offs,disp,flags,unsure:uu,rs,lv};
 }
 const unsureMsg=u=>`Chưa chắc chắn ở ${u.slice(0,6).join(', ')}${u.length>6?'… ('+u.length+' chỗ)':''}: ô tô mờ, tô chưa kín hoặc tẩy chưa sạch.`;
 
@@ -1175,7 +1182,7 @@ const need=(lib,n)=>{if(!window[lib]){toast('Chưa tải được thư viện '+
 /* ================= VẼ KẾT QUẢ LÊN ẢNH ================= */
 async function blobToImg(b){return new Promise((res,rej)=>{const u=URL.createObjectURL(b),im=new Image();im.onload=()=>{res(im);setTimeout(()=>URL.revokeObjectURL(u),1000)};im.onerror=rej;im.src=u;});}
 function drawOverlay(ctx,ex,res){
- const L=lay(ex.tpl),K=ctx.canvas.width/L.F.W,key=ex.keys[res.ans.made],a=res.ans,off=res.offs||[];
+ const L=lay(ex.tpl+(res.lv&&TPLS[ex.tpl+'0']?'0':'')),K=ctx.canvas.width/L.F.W,key=ex.keys[res.ans.made],a=res.ans,off=res.offs||[];
  const P=b=>{const o=off[b.b]||[0,0];return[(b.x+o[0])*K,(b.y+o[1])*K]};
  const ring=(b,col,w=2.4)=>{const[x,y]=P(b);ctx.strokeStyle=col;ctx.lineWidth=w*K/4;ctx.beginPath();ctx.arc(x,y,RB*(res.rs||1)*K*1.25,0,Math.PI*2);ctx.stroke();};
  const G='#12a150',RD='#e02a20',YE='#e8b400',BL='#2a6ee0';
@@ -1620,7 +1627,7 @@ function showKeyQR(e){
 /* ---------- Mã QR tra điểm cho học sinh ---------- */
 function appBase(){try{const v=localStorage.getItem('ct_base');if(v)return v;}catch(e){}
  if(/^https?:$/.test(location.protocol)&&!/claude\.(ai|site|com)|claudeusercontent|androidplatform\.net|localhost/.test(location.hostname))return location.origin+location.pathname;return DEFAULT_BASE;}
-const BUILD='12/11/2026 21:07';
+const BUILD='12/11/2026 21:28';
 const DEFAULT_BASE='https://hatthi32.github.io/CHAMTHI-TN/';
 const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const unb64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
@@ -1724,7 +1731,7 @@ async function scanOne(e,file){
 async function saveAnalysis(e,A){
  const imgId=uid(),blob=await canvasBlob(A.disp,'image/jpeg',0.8);await DB.put('images',{id:imgId,blob});
  const cr=lay(A.tplId).F.crop,crop=document.createElement('canvas');crop.width=1100;crop.height=Math.round(1100*cr[3]/cr[2]);{const kd=A.disp.width/lay(A.tplId).F.W;crop.getContext('2d').drawImage(A.disp,cr[0]*kd,cr[1]*kd,cr[2]*kd,cr[3]*kd,0,0,crop.width,crop.height);}
- const res={id:uid(),examId:e.id,time:Date.now(),timeStr:nowStr(),ans:A.ans,offs:A.offs,flags:A.flags||[],unsure:A.unsure||[],rs:A.rs||1,imgId,crop:crop.toDataURL('image/jpeg',0.75)};
+ const res={id:uid(),examId:e.id,time:Date.now(),timeStr:nowStr(),ans:A.ans,offs:A.offs,flags:A.flags||[],unsure:A.unsure||[],rs:A.rs||1,lv:A.lv||0,imgId,crop:crop.toDataURL('image/jpeg',0.75)};
  res.score=grade(e,res.ans);res.name=nameFor(e,res.ans.sbd);res.cls=(stuOf(e,res.ans.sbd)||{}).cls||'';const all=await DB.byExam(e.id);res.issues=issuesOf(e,res,all.concat([res]));
  await DB.put('results',res);
  for(const o of all)if(o.ans.sbd===res.ans.sbd&&!/[_?]/.test(res.ans.sbd)&&!o.issues.includes('Trùng SBD với bài khác')){o.issues.push('Trùng SBD với bài khác');await DB.put('results',o);}
@@ -2029,7 +2036,7 @@ function xdAnalyzeQ(doc,q,X){
     if(q.opts.length<4){let mk=optMarks(t,nextL);
      if(i===0&&!mk.length){const qm=t.match(RX.q);const k=t.indexOf(' A.',qm[0].length);if(k>0){const m2=optMarks(t.slice(k+1),'A');if(m2.length===4){mk=m2.map(m=>({...m,at:m.at+k+1,end:m.end+k+1}));}}}
      if(mk.length&&(i>0||mk[0].at>0)){pushOpts(n,mk);mode='opt';continue;}}
-    if(mode==='opt'&&q.opts.length<4){q.opts[q.opts.length-1].paras.push(n);continue;}
+    if(mode==='opt'&&q.opts.length<4){if(!emptyP(n))q.opts[q.opts.length-1].paras.push(n);continue;}
     if(mode==='opt'){q.tail.push(n);continue;}
     q.stem.push(n);continue;}
    if(q.kind===2){const sm=t.match(RX.stm);
@@ -2046,7 +2053,7 @@ function xdAnalyzeQ(doc,q,X){
     if(q.kind===1){const mk=optMarks(ct,q.opts.length?'ABCD'[q.opts.length]:'A');if(mk.length){pushOpts(cp,mk);used=true;}else if(used&&ct.trim()&&q.opts.length)q.opts[q.opts.length-1].paras.push(cp);}
     else{const sm=ct.match(RX.stm);if(sm&&'abcd'[q.stms.length]===sm[1].toLowerCase()){const segs=cutP(cp,[0,sm[0].length,ct.length]);q.stms.push({L:sm[1].toLowerCase(),nodes:trimNodes(doc,segs[1]),pPr:wkid(cp,'pPr'),labRPr:rPrOf(segs[0].find(x=>isW(x,'r'))),marked:markedAt(cp,ct.search(/[a-dA-D]/))});used=true;}}}
    if(used){mode=q.kind===1?'opt':'stm';continue;}}
-  if(mode==='stem')q.stem.push(n);else if(q.kind===1&&q.opts.length<4)q.opts[q.opts.length-1].paras.push(n);else q.tail.push(n);
+  if(mode==='stem')q.stem.push(n);else if(q.kind===1&&q.opts.length<4){if(!emptyP(n))q.opts[q.opts.length-1].paras.push(n);}else q.tail.push(n);
  }
  if(q.kind===1){if(q.opts.length!==4)X.warn.push(`Phần trắc nghiệm, câu ${q.num}: chỉ thấy ${q.opts.length} phương án nên giữ nguyên thứ tự phương án.`);
   const mk=q.opts.filter(o=>o.marked);if(mk.length===1){q.key=mk[0].L;q.src='gạch chân';}
@@ -2209,7 +2216,7 @@ const SYMF=/symbol|wingding|webding|mt\s*extra|cambria\s*math|math/i;
 function normRuns(el){const rs=isW(el,'r')?[el]:[...el.getElementsByTagNameNS(WNS,'r')];
  for(const r of rs){let pr=wkid(r,'rPr');if(!pr){pr=r.ownerDocument.createElementNS(WNS,'w:rPr');r.insertBefore(pr,r.firstChild);}
   const rf=wkid(pr,'rFonts');if(rf&&SYMF.test(rf.getAttributeNS(WNS,'ascii')||''))continue;
-  for(const c of [...pr.childNodes])if(isW(c)&&['rFonts','sz','szCs','color','highlight','shd','rStyle','spacing','w','kern','position'].includes(c.localName))pr.removeChild(c);
+  for(const c of [...pr.childNodes])if(isW(c)&&['rFonts','sz','szCs','color','highlight','shd','rStyle','spacing','w','kern'].includes(c.localName))pr.removeChild(c);
   const d=r.ownerDocument,f=d.createElementNS(WNS,'w:rFonts');for(const k of['ascii','hAnsi','cs','eastAsia'])f.setAttributeNS(WNS,'w:'+k,STD.font);pr.insertBefore(f,pr.firstChild);
   const sz=d.createElementNS(WNS,'w:sz');sz.setAttributeNS(WNS,'w:val',String(STD.sz));const s2=d.createElementNS(WNS,'w:szCs');s2.setAttributeNS(WNS,'w:val',String(STD.sz));
   // thứ tự chuẩn: sz đứng sau b/i/u…, trước vertAlign
@@ -2218,6 +2225,9 @@ function normRuns(el){const rs=isW(el,'r')?[el]:[...el.getElementsByTagNameNS(WN
 function stdPPr(doc,{jc='both',ind=0,hang=0,tabs=[],before=30,keep=false}={}){
  const x=`<w:pPr xmlns:w="${WNS}">${keep?'<w:keepNext/>':''}${tabs.length?`<w:tabs>${tabs.map(p=>`<w:tab w:val="left" w:pos="${Math.round(p)}"/>`).join('')}</w:tabs>`:''}<w:spacing w:before="${before}" w:after="0" w:line="252" w:lineRule="auto"/>${ind||hang?`<w:ind w:left="${ind+hang}"${hang?` w:hanging="${hang}"`:''}/>`:''}<w:jc w:val="${jc}"/></w:pPr>`;
  return doc.importNode(new DOMParser().parseFromString(x,'application/xml').documentElement,true);}
+// Đoạn trống (không chữ, không hình, không công thức) → bỏ, tránh các dòng trống thừa trong đề
+function emptyP(n){if(!isW(n,'p'))return false;if(pText(n).replace(/[\s\u00A0\f]/g,''))return false;
+ return !(n.getElementsByTagNameNS(WNS,'drawing').length||n.getElementsByTagNameNS(WNS,'pict').length||n.getElementsByTagNameNS(WNS,'object').length||n.getElementsByTagNameNS(MNS,'oMath').length);}
 function stdP(doc,p,opts){const c=p.cloneNode(true);if(!isW(c,'p'))return normTbl(c);const old=wkid(c,'pPr');
  const hasImg=c.getElementsByTagNameNS(WNS,'drawing').length+c.getElementsByTagNameNS(WNS,'pict').length>0,txt=pText(c).replace(OBJ,'').trim();
  const np=stdPPr(doc,{...opts,jc:hasImg&&!txt?'center':(opts&&opts.jc)||'both'});
@@ -2246,14 +2256,14 @@ async function xdBuildDocx(D,X,code,opt,sheet){
  let gnum=0,pi=0;const W=STD.tw,IND=0;
  for(const{P,items}of plan){const px=partXml(P,pi++,items.length,cont?gnum+1:1);
   if(px)addXml(px);else{for(const n of P.title)if(n)add(stdP(D.doc,n,{before:120,keep:true}));}
-  if(P.kind===4)for(const n of P.intro)add(stdP(D.doc,n,{}));
+  if(P.kind===4)for(const n of P.intro)if(!emptyP(n))add(stdP(D.doc,n,{}));
   let k=0;
   for(const it of items){const q=it.q;k++;const num=cont&&P.kind!==4?++gnum:k;
    if(it.g){for(const n of it.g.intro){let p=n.cloneNode(true);const t=pText(p),m=t.match(RX.group);if(m&&isW(p,'p')){const len=it.g.qs.length;p=editP(D.doc,p,m.index,m.index+m[0].length,m[0].replace(/\d+/,String(num)).replace(/(\d+)(?!.*\d)/,String(num+len-1)));}add(stdP(D.doc,p,{before:60}));}}
-   q.stem.forEach((n,i)=>{let p=i===0&&P.kind!==4?stdLabel(D.doc,n,num):n;add(stdP(D.doc,p,{before:i===0?80:20}));});
+   q.stem.forEach((n,i)=>{if(i>0&&emptyP(n))return;let p=i===0&&P.kind!==4?stdLabel(D.doc,n,num):n;add(stdP(D.doc,p,{before:i===0?80:20}));});
    if(P.kind===1){const ord=it.opts||q.opts;for(const n of stdOpts(D.doc,q,ord))add(n);}
-   if(P.kind===2){const ord=it.stms||q.stms;ord.forEach((s,i)=>{const p=mkP(D.doc,null,[mkRun(D.doc,'abcd'[i]+') ',null,false),...s.nodes.map(n=>s.marked?unmark(n):n.cloneNode(true))]);add(stdP(D.doc,p,{ind:283,hang:0,before:20}));for(const e of s.extra||[])add(stdP(D.doc,s.marked?unmark(e):e,{ind:283}));});}
-   for(const n of q.tail)add(stdP(D.doc,n,{}));}}
+   if(P.kind===2){const ord=it.stms||q.stms;ord.forEach((s,i)=>{const p=mkP(D.doc,null,[mkRun(D.doc,'abcd'[i]+') ',null,false),...s.nodes.map(n=>s.marked?unmark(n):n.cloneNode(true))]);add(stdP(D.doc,p,{ind:283,hang:0,before:20}));for(const e of s.extra||[])if(!emptyP(e))add(stdP(D.doc,s.marked?unmark(e):e,{ind:283}));});}
+   for(const n of q.tail)if(!emptyP(n))add(stdP(D.doc,n,{}));}}
  addXml(wp(wr('------------------------ HẾT ------------------------',{b:true}),{jc:'center',before:240}));
  addXml(wp(wr('- Thí sinh không được sử dụng tài liệu;  - Cán bộ coi thi không giải thích gì thêm.',{i:true,sz:22}),{jc:'center',before:60}));
  addXml(`<w:sectPr><w:footerReference w:type="default" r:id="rIdXdFtr"/><w:pgSz w:w="${STD.pw}" w:h="${STD.ph}"/><w:pgMar w:top="${STD.mt}" w:right="${STD.mr}" w:bottom="${STD.mb}" w:left="${STD.ml}" w:header="425" w:footer="425" w:gutter="0"/><w:cols w:space="720"/></w:sectPr>`);
@@ -2279,7 +2289,7 @@ function stdOpts(doc,q,order){const IND=283,avail=STD.tw-IND,len=Math.max(...ord
   for(let c=0;c<cols&&r+c<order.length;c++){const o=order[r+c],L='ABCD'[r+c];if(c)nodes.push(mkRun(doc,'\t',null,false));
    const lr=mkRun(doc,L+'. ',null,true);nodes.push(lr);for(const n of o.nodes[0])nodes.push(o.marked?unmark(n):n.cloneNode(true));}
   out.push(stdP(doc,mkP(doc,null,nodes),{jc:'left',ind:IND,tabs,before:20}));
-  if(cols===1){const o=order[r];for(const ep of o.paras)out.push(stdP(doc,o.marked?unmark(ep):ep,{jc:'left',ind:IND+340}));}}
+  if(cols===1){const o=order[r];for(const ep of o.paras)if(!emptyP(ep))out.push(stdP(doc,o.marked?unmark(ep):ep,{jc:'left',ind:IND+340}));}}
  return out;}
 // Bảng đáp án Excel đúng định dạng app đọc được
 function xdKeyRows(X,title,codes,plans){const ps=X.parts.filter(p=>p.kind!==4),PN={1:'PHẦN I. TRẮC NGHIỆM NHIỀU LỰA CHỌN',2:'PHẦN II. TRẮC NGHIỆM ĐÚNG/SAI',3:'PHẦN III. TRẢ LỜI NGẮN'};
@@ -2437,7 +2447,11 @@ async function xdBuildPdfDocx(X,code,opt,sheet,meta={}){
  if(!X.box){const bs=X.pages.map(p=>p.box);X.box={l:Math.min(...bs.map(b=>b.l)),r:Math.max(...bs.map(b=>b.r))};xdPdfPrep(X);}
  const plan=xdPlan(X,code,{...opt,stms:false});const imgs=[];const body=[];const esc2=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
  const pt=px=>px/PDF_S,emu=px=>Math.round(pt(px)*12700);
- const imgP=async(c)=>{const png=await new Promise(r=>c.toBlob(b=>b.arrayBuffer().then(r),'image/png'));imgs.push(new Uint8Array(png));const k=imgs.length;
+ // cắt bớt khoảng trắng thừa phía trên/dưới mỗi ảnh (tránh dòng trống to giữa các câu)
+ const trimV=c=>{const x=c.getContext('2d'),d=x.getImageData(0,0,c.width,c.height).data,W=c.width;const ink=y=>{for(let i=0;i<W;i+=2){const k=(y*W+i)*4;if(d[k]+d[k+1]+d[k+2]<660)return true;}return false;};
+  let t=0,b=c.height-1;while(t<b&&!ink(t))t++;while(b>t&&!ink(b))b--;t=Math.max(0,t-6);b=Math.min(c.height-1,b+6);if(t===0&&b===c.height-1)return c;
+  const o=document.createElement('canvas');o.width=W;o.height=b-t+1;o.getContext('2d').drawImage(c,0,-t);return o;};
+ const imgP=async(c0)=>{const c=trimV(c0);const png=await new Promise(r=>c.toBlob(b=>b.arrayBuffer().then(r),'image/png'));imgs.push(new Uint8Array(png));const k=imgs.length;
   // ảnh cắt từ PDF giữ cỡ thật; câu nào rộng hơn vùng chữ chuẩn thì thu vừa
   let w=c.width,h=c.height;const maxW=STD.tw/20*PDF_S;if(w>maxW){h=h*maxW/w;w=maxW;}
   body.push(`<w:p><w:pPr><w:spacing w:before="20" w:after="0" w:line="240" w:lineRule="auto"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${emu(w)}" cy="${emu(h)}"/><wp:docPr id="${k}" name="h${k}"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${k}" name="h${k}.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rImg${k}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${emu(w)}" cy="${emu(h)}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`);};
