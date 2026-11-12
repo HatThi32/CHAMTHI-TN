@@ -36,6 +36,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f);font-size:16.5px
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bar)}
 button,input,select{font:inherit;color:inherit}
 .bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bar);color:var(--bar-fg);display:flex;align-items:center;gap:6px;min-height:58px;padding-block:6px;padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));border-bottom:1px solid color-mix(in srgb,var(--brass) 45%,transparent)}
+.bar #backBtn[hidden]+h1,.bar h1:first-child{padding-left:10px}
 .bar h1{font-family:var(--f);font-size:20px;font-weight:700;margin:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.005em;font-variation-settings:"opsz" 36}
 .bar .ib{background:none;border:0;color:inherit;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;cursor:pointer;flex:none}
 .bar .ib:focus-visible,.bar .act:focus-visible{outline:2px solid var(--brass);outline-offset:1px}
@@ -137,7 +138,7 @@ input.in:focus,select.in:focus,textarea.in:focus{outline:2px solid var(--accent)
 .zs .zimg{display:block;max-width:none;height:auto;transform-origin:center center;user-select:none;-webkit-user-drag:none;pointer-events:none;will-change:transform}
 .sech{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:4px}.sech h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.01em}
 .ecard{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
-.ecard .eh{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;width:100%;padding:16px 16px 12px;background:none;border:0;text-align:left;cursor:pointer;color:inherit}
+.ecard .eh{display:flex;flex-direction:column;gap:4px;width:100%;padding:16px 16px 12px;background:none;border:0;text-align:left;cursor:pointer;color:inherit}
 .ecard .eh b{font-size:20px;font-weight:800;line-height:1.25;letter-spacing:-.01em}.ecard .eh .chev{grid-row:1/3;grid-column:2;align-self:center;color:var(--line2)}
 .ecard .eh .em{font-size:15px;color:var(--muted)}.ecard .eh .em strong{color:var(--ink)}.ecard .eh .em i{color:var(--warn);font-style:normal;font-weight:700}
 .ea{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 16px}.ea .btn{min-height:54px;font-size:17.5px;border-radius:14px;white-space:nowrap;padding:10px 12px}.ea .btn svg{width:22px;height:22px}
@@ -149,6 +150,14 @@ input.in:focus,select.in:focus,textarea.in:focus{outline:2px solid var(--accent)
 .xk input{border:0;outline:0;background:none;width:100%;min-width:0;font:700 17px var(--f);color:var(--ink);text-transform:uppercase;padding:4px 0}
 .xk.miss{border-color:var(--warn);background:var(--warn-soft)}
 .row.ck{gap:10px;flex-wrap:nowrap;align-items:flex-start;margin-top:8px}.row.ck input{width:20px;height:20px;accent-color:var(--accent);flex:none;margin-top:2px}
+.ehw{display:flex;align-items:flex-start}.ehw .eh{flex:1;min-width:0}
+.emore{flex:none;width:48px;height:48px;margin:10px 8px 0 0;border:0;border-radius:12px;background:none;color:var(--muted);display:grid;place-items:center;cursor:pointer}.emore:active{background:var(--surface2)}
+.opt.danger b{color:var(--bad)}.opt.danger .ic{color:var(--bad);background:var(--bad-soft)}
+.btn.danger svg{width:20px;height:20px;vertical-align:-4px;margin-right:4px}
+.hub{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;width:100%;padding:20px 18px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow);text-align:left;cursor:pointer;color:inherit}
+.hub .ic{width:54px;height:54px;border-radius:14px;display:grid;place-items:center;background:var(--accent);color:#fff}.hub .ic svg{width:28px;height:28px}
+.hub b{display:block;font-size:21px;font-weight:800}.hub .tx span{display:block;font-size:15px;color:var(--muted);margin-top:2px}.hub .chev{color:var(--line2)}
+.hubgo{min-height:60px;font-size:17.5px;display:flex;align-items:center;justify-content:center;gap:10px}.hubgo span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hubgo svg{flex:none;width:22px;height:22px}
 .sheetimg{width:100%;height:auto;border-radius:10px;border:1px solid var(--line);background:#fff;display:block}
 .kp{display:flex;flex-direction:column;gap:6px}
 .kq{display:flex;align-items:center;gap:6px}
@@ -227,7 +236,7 @@ table.t th{font-size:11px;color:var(--brass);font-weight:700;text-transform:uppe
 .bd div{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:9px 11px}
 .bd b{display:block;font-family:var(--fd);font-size:21px;font-weight:600;font-variant-numeric:tabular-nums lining-nums}
 .bd span{font-size:12px;color:var(--muted)}
-.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.thumbs{display:flex;flex-direction:column;gap:12px}.card.th{flex-direction:row;align-items:flex-start;gap:14px}.card.th canvas{width:118px;flex:none}.thi{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}.thi b{font-size:17px}.thi .pill{align-self:flex-start}
 .thumbs canvas{width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff;display:block}
 ol.steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:9px}
 ol.steps li{padding-left:4px}
@@ -750,6 +759,7 @@ const ICON={
  edit:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>',
  plus:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
  qr:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></svg>',
+ trash:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>',
  chev:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
 };
 
@@ -763,7 +773,7 @@ const TPLS={
  qm:{id:'qm',code:101,fmt:'qm',external:true,fn:'QM-2025-Su-Tin-CN-GDPL',short:'Phiếu QM 2025 – Sử, Tin, CN, GDPL',subjects:'Phiếu in sẵn của app Chấm Thi QM (chỉ quét, không tải mẫu): mã đề 3 số',p1:24,p2:6,p3:0,p3pt:0.25,madeCols:3},
  nn:{id:'nn',code:4,fmt:'a5',fn:'Ngoai-ngu',short:'Ngoại ngữ',subjects:'Tiếng Anh và các môn ngoại ngữ',p1:40,p2:0,p3:0,p3pt:0.25},
 };
-const TPL_IDS=['tong','tx','toan','khtn','xh','nn','qm'];
+const TPL_IDS=['toan','khtn','xh','nn','tong','tx','qm'];
 const OWN_IDS=TPL_IDS.filter(id=>!TPLS[id].external);
 const RB=2.1; // bán kính ô tô (mm)
 // Khổ phiếu: A4 đứng, hoặc nửa A4 (in 2 phiếu một tờ rồi cắt đôi). MK: tâm 4 ô định vị theo chiều kim đồng hồ; CODE: ô neo + 3 bit mã mẫu
@@ -1249,35 +1259,45 @@ document.addEventListener('click',e=>{const el=e.target.closest('[data-go]');if(
 const mi=(ic,t,s,goV,p)=>`<button class="mi" data-go="${goV}"${p?` data-p='${esc(JSON.stringify(p))}'`:''}><span class="ic">${ICON[ic]}</span><span class="tx"><b>${esc(t)}</b>${s?`<span>${esc(s)}</span>`:''}</span><span class="chev">${ICON.chev}</span></button>`;
 
 /* ---------- Trang chủ ---------- */
+// Xóa bài kiểm tra (dùng chung cho thẻ, trang bài kiểm tra, trang sửa)
+function deleteExam(e){confirmBox('Xóa bài kiểm tra?','Toàn bộ đáp án, ảnh bài làm và điểm của "'+e.name+'" sẽ bị xóa khỏi máy. Hãy xuất kết quả trước nếu cần giữ.','Xóa vĩnh viễn',async()=>{
+ for(const r of await DB.byExam(e.id)){if(r.imgId)await DB.del('images',r.imgId);await DB.del('results',r.id);}await DB.del('exams',e.id);await loadAll();S.stack=[{v:'home',p:{}},{v:'exams',p:{}}];render();toast('Đã xóa "'+e.name+'"');});}
+// Menu ⋮ trên thẻ bài kiểm tra
+document.addEventListener('click',ev=>{const b=ev.target.closest('[data-more]');if(!b)return;ev.stopPropagation();const e=exById(isNaN(b.dataset.more)?b.dataset.more:+b.dataset.more)||exById(b.dataset.more);if(!e)return;
+ modal(`<h2>${esc(e.name)}</h2>
+ <button class="opt" data-m="open"><span class="ic">${ICON.list}</span><span><b>Mở bài kiểm tra</b><span>Đáp án, chấm bài, kết quả, thống kê</span></span></button>
+ <button class="opt" data-m="edit"><span class="ic">${ICON.edit}</span><span><b>Sửa tên, số câu, thang điểm</b><span>Đổi xong app tự chấm lại các bài đã quét</span></span></button>
+ <button class="opt" data-m="exp"><span class="ic">${ICON.exp}</span><span><b>Xuất kết quả</b><span>Bảng điểm Excel, ảnh bài làm, mã QR tra điểm</span></span></button>
+ <button class="opt danger" data-m="del"><span class="ic">${ICON.trash}</span><span><b>Xóa bài kiểm tra</b><span>Xóa đáp án, ảnh và điểm của bài này</span></span></button>
+ <div class="row" style="justify-content:flex-end"><button class="btn" data-m="x">Đóng</button></div>`,a=>{const P={id:e.id};if(a==='open')go('exam',P);if(a==='edit')go('examForm',P);if(a==='exp')go('export',P);if(a==='del')setTimeout(()=>deleteExam(e),60);});},true);
 // Thẻ bài kiểm tra: bấm "Chấm bài" là mở camera ngay, bấm "Kết quả" xem bài đã chấm
 function examCard(e,n){const P=esc(JSON.stringify({id:e.id})),PA=esc(JSON.stringify({id:e.id,auto:1})),nk=Object.keys(e.keys).length;
- return`<div class="ecard"><button class="eh" data-go="exam" data-p='${P}'><b>${esc(e.name)}</b>
-  <span class="em">${esc(TPLS[e.tpl].short)} · ${nk?nk+' mã đề':'<i>chưa có đáp án</i>'} · <strong>${n}</strong> bài đã chấm</span><span class="chev">${ICON.chev}</span></button>
+ return`<div class="ecard"><div class="ehw"><button class="eh" data-go="exam" data-p='${P}'><b>${esc(e.name)}</b>
+  <span class="em">${esc(TPLS[e.tpl].short)} · ${nk?nk+' mã đề':'<i>chưa có đáp án</i>'} · <strong>${n}</strong> bài đã chấm${e.createdStr?` · ${esc(String(e.createdStr).split(' ')[0])}`:''}</span></button>
+  <button class="emore" data-more="${esc(e.id)}" aria-label="Thêm thao tác cho ${esc(e.name)}"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button></div>
   <div class="ea"><button class="btn pri" data-go="scan" data-p='${PA}'>${ICON.cam} Chấm bài</button><button class="btn" data-go="results" data-p='${P}'>${ICON.img} Kết quả</button></div></div>`;}
 V.home=async()=>{
- const counts={};let nb=0;for(const e of S.exams){counts[e.id]=(await DB.byExam(e.id)).length;nb+=counts[e.id];}
- const recent=[...S.exams].sort((a,b)=>(b.created||0)-(a.created||0)).slice(0,6);
+ let nb=0;for(const e of S.exams)nb+=(await DB.byExam(e.id)).length;
  return{title:'ChamthiQM',html:`
  ${DB.mem?'<div class="warnbox">Trình duyệt này không cho lưu dữ liệu lâu dài. Bài chấm chỉ giữ đến khi đóng trang, hãy xuất kết quả trước khi thoát.</div>':''}
- <div class="sech"><h2>Bài kiểm tra</h2><button class="btn pri sm" id="hNew">+ Tạo mới</button></div>
- ${recent.length?recent.map(e=>examCard(e,counts[e.id])).join(''):`<div class="empty"><b>Chưa có bài kiểm tra nào</b><span>Tạo bài kiểm tra, nhập đáp án, rồi bấm Chấm bài để quét phiếu bằng camera.</span></div>`}
- ${S.exams.length>recent.length?`<button class="btn" data-go="exams">Xem tất cả ${S.exams.length} bài kiểm tra</button>`:''}
+ <button class="hub" data-go="exams"><span class="ic">${ICON.list}</span><span class="tx"><b>Danh sách chấm</b><span>${S.exams.length?`${S.exams.length} bài kiểm tra · ${nb} bài đã chấm`:'Chưa có bài kiểm tra nào · bấm để tạo'}</span></span><span class="chev">${ICON.chev}</span></button>
+ <button class="btn pri hubgo" id="hNew">${ICON.plus}<span>Tạo bài kiểm tra mới</span></button>
  <div class="menu">
- ${mi('list','Danh sách chấm',S.exams.length+' bài kiểm tra · '+nb+' bài đã chấm','exams')}
  ${mi('edit','Xáo đề thi','Từ đề Word/PDF: xáo mã đề, chèn phiếu, xuất đáp án','shuffle')}
  ${mi('sheet','Tải phiếu trả lời','Phiếu mẫu để in cho học sinh','sheets')}
  ${mi('class','Lớp học',S.classes.length?S.classes.length+' lớp':'Danh sách học sinh theo SBD','classes')}
  ${mi('gear','Cài đặt & sao lưu','Độ nhạy, sao lưu dữ liệu','settings')}
  ${mi('help','Hướng dẫn','Từ in phiếu đến xuất bảng điểm','guide')}
- </div>`,after(){$('#hNew').onclick=newExamMenu;}};
+ </div>`,after(){const b=$('#hNew');if(b)b.onclick=newExamMenu;}};
 };
 
 /* ---------- Danh sách bài kiểm tra ---------- */
 V.exams=async()=>{
  const counts={};for(const e of S.exams)counts[e.id]=(await DB.byExam(e.id)).length;
- const cards=S.exams.map(e=>examCard(e,counts[e.id])).join('');
- return{title:'Danh sách chấm',html:cards||`<div class="empty"><b>Chưa có bài kiểm tra nào</b><span>Mỗi bài kiểm tra là một thư mục riêng chứa đáp án, ảnh bài làm và bảng điểm.</span><button class="btn pri" data-go="examForm">Tạo bài kiểm tra</button><label class="btn" for="fXls" id="fromShuf" role="button">Tạo từ file đáp án app xáo đề</label></div>`,
-  fab:{label:'Tạo bài kiểm tra',fn:newExamMenu},after(){const b=$('#fromShuf');if(b)b.onclick=()=>pickFile('fXls',f=>fromShuffler(f[0]));}};
+ const list=[...S.exams].sort((a,b)=>(b.created||0)-(a.created||0));
+ const cards=list.length?`<div class="sech"><h2>${list.length} bài kiểm tra</h2><button class="btn pri sm" id="exNew">+ Tạo mới</button></div>`+list.map(e=>examCard(e,counts[e.id])).join(''):'';
+ return{title:'Danh sách chấm',html:cards||`<div class="empty"><b>Chưa có bài kiểm tra nào</b><span>Mỗi bài kiểm tra là một thư mục riêng chứa đáp án, ảnh bài làm và bảng điểm.</span><button class="btn pri" id="exNew">+ Tạo bài kiểm tra</button><button class="btn" data-go="shuffle">Xáo đề từ file Word / PDF</button><label class="btn" for="fXls" id="fromShuf">Từ file đáp án Excel</label></div>`,
+  after(){const b=$('#fromShuf');if(b)b.onclick=()=>pickFile('fXls',f=>fromShuffler(f[0]));const n=$('#exNew');if(n)n.onclick=newExamMenu;}};
 };
 
 /* ---------- Tạo / sửa bài kiểm tra ---------- */
@@ -1375,8 +1395,7 @@ V.examForm=async(p)=>{
    Object.assign(ex,{name,tpl,n1,n2,n3,p1pt:+$('#p1pt').value||0,p3pt:+$('#p3pt').value||0,p2pts:[1,2,3,4].map(k=>+$('#p2k'+k).value||0),noSbd:!$('#useSbd').checked,madeLen:+document.querySelector('input[name=ml]:checked').value,scale10:$('#sc10').checked});
    await DB.put('exams',ex);await loadAll();await regradeAll(ex);
    if(e){back();toast('Đã lưu');}else replace('exam',{id:ex.id});};
-  if(e)$('#exDel').onclick=()=>confirmBox('Xóa bài kiểm tra?','Toàn bộ đáp án, ảnh bài làm và điểm của "'+e.name+'" sẽ bị xóa khỏi máy. Hãy xuất kết quả trước nếu cần giữ.','Xóa vĩnh viễn',async()=>{
-   for(const r of await DB.byExam(e.id)){await DB.del('images',r.imgId);await DB.del('results',r.id);}await DB.del('exams',e.id);await loadAll();S.stack=[{v:'home',p:{}},{v:'exams',p:{}}];render();toast('Đã xóa bài kiểm tra');});
+  if(e)$('#exDel').onclick=()=>deleteExam(e);
  }};
 };
 async function regradeAll(ex){const rs=await DB.byExam(ex.id);for(const r of rs){if(r.ans.madeRaw&&!r.ans.madeEdited)r.ans.made=deriveMade(r.ans.madeRaw,ex.madeLen||3,ex.keys);r.score=grade(ex,r.ans);r.name=nameFor(ex,r.ans.sbd);r.cls=(stuOf(ex,r.ans.sbd)||{}).cls||'';r.issues=issuesOf(ex,r,rs);await DB.put('results',r);}}
@@ -1397,12 +1416,11 @@ V.exam=async(p)=>{window.__autoLive=true;
  <div class="ea big"><button class="btn pri" data-go="scan" data-p='${esc(JSON.stringify({id:e.id,auto:1}))}'>${ICON.cam} Chấm bài</button><button class="btn" data-go="results" data-p='${esc(JSON.stringify(P))}'>${ICON.img} Kết quả (${rs.length})</button></div>
  <div class="menu">
  ${mi('key','Đáp án',nk?nk+' mã đề: '+Object.keys(e.keys).sort().join(', '):'Chưa có đáp án','keys',P)}
- ${mi('cam','Chấm bài','Chụp phiếu, có điểm ngay','scan',P)}
- ${mi('img','Bài đã chấm',rs.length+' bài','results',P)}
  ${mi('exp','Xuất kết quả','Bảng điểm Excel, thư mục ảnh bài làm','export',P)}
  ${mi('chart','Thống kê','Phổ điểm, tỉ lệ đúng từng câu','stats',P)}
  ${mi('class','Chọn lớp học',cl.length?'Lớp '+cl.map(c=>c.name).join(', ')+' · '+cl.reduce((a,c)=>a+c.students.length,0)+' học sinh':'Chưa gắn lớp · có thể chọn nhiều lớp','pickClass',P)}
- </div>`};
+ </div>
+ <button class="btn danger" id="exDel2">${ICON.trash} Xóa bài kiểm tra này</button>`,after(){$('#exDel2').onclick=()=>deleteExam(e);}};
 };
 
 /* ---------- Đáp án ---------- */
@@ -1618,7 +1636,7 @@ function examFromQR(t){
 function showKeyQR(e){
  if(!need('qrcode','tạo mã QR'))return;
  let c;try{c=qrCanvas(keyQRString(e),6);}catch(err){toast('Đáp án quá dài để đưa vào một mã QR.',5000);return;}
- modal(`<h2>Mã QR đáp án</h2><div class="note">Đồng nghiệp mở app ChamthiQM → Danh sách chấm → + → Từ mã QR đáp án, rồi quét mã này. Bài kiểm tra được tạo với đủ ${Object.keys(e.keys).length} mã đề, số câu và cách tính điểm.</div>
+ modal(`<h2>Mã QR đáp án</h2><div class="note">Đồng nghiệp mở app ChamthiQM → Danh sách chấm → + Tạo mới → Từ mã QR đáp án, rồi quét mã này. Bài kiểm tra được tạo với đủ ${Object.keys(e.keys).length} mã đề, số câu và cách tính điểm.</div>
  <div id="qrBox" style="background:#fff;border-radius:12px;padding:8px;align-self:center;max-width:100%"></div>
  <div class="row" style="justify-content:flex-end"><button class="btn" data-m="x">Đóng</button><button class="btn pri" data-m="save">Lưu ảnh mã QR</button></div>`,async a=>{if(a==='save'){saveFile('QR_dap_an_'+safeName(e.name).replace(/ /g,'_')+'.png',await canvasBlob(c,'image/png'));return false;}});
  c.style.cssText='width:min(300px,100%);height:auto;display:block;image-rendering:pixelated';$('#qrBox').appendChild(c);
@@ -1627,7 +1645,7 @@ function showKeyQR(e){
 /* ---------- Mã QR tra điểm cho học sinh ---------- */
 function appBase(){try{const v=localStorage.getItem('ct_base');if(v)return v;}catch(e){}
  if(/^https?:$/.test(location.protocol)&&!/claude\.(ai|site|com)|claudeusercontent|androidplatform\.net|localhost/.test(location.hostname))return location.origin+location.pathname;return DEFAULT_BASE;}
-const BUILD='12/11/2026 21:28';
+const BUILD='12/11/2026 21:52';
 const DEFAULT_BASE='https://hatthi32.github.io/CHAMTHI-TN/';
 const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const unb64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
@@ -1695,6 +1713,8 @@ let session={examId:null,count:0,last:null};
 V.scan=async(p)=>{
  if(p.auto)window.__autoLive=true;
  const e=exById(p.id);if(session.examId!==e.id)session={examId:e.id,count:0,last:null};
+ // nhớ các phiếu đã chấm của bài này (kể cả lần trước) để không lưu trùng khi lỡ quét lại
+ session.fps=new Set((await DB.byExam(e.id)).map(r=>fpOf(r.ans)));
  const nk=Object.keys(e.keys).length;
  return{title:'Chấm bài · '+e.name,html:`
  ${!nk?'<div class="warnbox">Bài kiểm tra chưa có đáp án. Vẫn chụp được, bài sẽ tự có điểm khi bạn nhập đáp án.</div>':''}
@@ -1740,7 +1760,7 @@ async function saveAnalysis(e,A){
 const critical=i=>/^Mã đề (tô thiếu|tô nhiều|\d+ không có)/.test(i);
 function issueHtml(r){const c=r.issues.filter(critical),o=r.issues.filter(i=>!critical(i));return (c.length?`<div class="badbox" role="alert"><b>${c.map(esc).join('<br>')}</b><br>Kiểm tra lại phiếu, hoặc sửa mã đề ở mục Xem / sửa.</div>`:'')+(o.length?`<div class="row">${o.map(i=>`<span class="pill warn">${esc(i)}</span>`).join('')}</div>`:'');}
 function scoreBlock(e,r){const s=r.score;if(!s)return`<div class="warnbox">${esc(r.issues[0]||'Chưa chấm')}</div>`;
- return`<div class="bd num">${e.n1?`<div><span>Phần I</span><b>${s.p1c}/${e.n1}</b><span>${fmt(s.s1)} điểm</span></div>`:''}${e.n2?`<div><span>Phần II</span><b>${s.p2c.reduce((a,b)=>a+b,0)}/${e.n2*4} ý</b><span>${fmt(s.s2)} điểm</span></div>`:''}${e.n3?`<div><span>Phần III</span><b>${s.p3c}/${e.n3}</b><span>${fmt(s.s3)} điểm</span></div>`:''}</div>${e.scale10?`<div class="note sc10n">Cộng 3 phần: <b>${fmt(rawOf(s))}</b> / ${fmt(examMax(e))} điểm tối đa. Bài kiểm tra này đang chọn <b>quy về thang 10</b>: ${fmt(rawOf(s))} × 10 ÷ ${fmt(examMax(e))} = <b>${fmt(s.total)}</b>. Bỏ chọn ở mục Sửa bài kiểm tra nếu muốn giữ điểm cộng.</div>`:''}`;}
+ return`<div class="bd num">${e.n1?`<div><span>Phần I</span><b>${s.p1c}/${e.n1}</b><span>${fmt(s.s1)} điểm</span></div>`:''}${e.n2?`<div><span>Phần II</span><b>${s.p2c.reduce((a,b)=>a+b,0)}/${e.n2*4}</b><span>ý đúng · ${fmt(s.s2)} điểm</span></div>`:''}${e.n3?`<div><span>Phần III</span><b>${s.p3c}/${e.n3}</b><span>${fmt(s.s3)} điểm</span></div>`:''}</div>${e.scale10?`<div class="note sc10n">Cộng 3 phần: <b>${fmt(rawOf(s))}</b> / ${fmt(examMax(e))} điểm tối đa. Bài kiểm tra này đang chọn <b>quy về thang 10</b>: ${fmt(rawOf(s))} × 10 ÷ ${fmt(examMax(e))} = <b>${fmt(s.total)}</b>. Bỏ chọn ở mục Sửa bài kiểm tra nếu muốn giữ điểm cộng.</div>`:''}`;}
 async function showScanResult(e,r,batch){
  const out=$('#sOut');if(!out)return;const fresh=await DB.get('results',r.id);if(!fresh){out.innerHTML='';return;}r=fresh;
  out.innerHTML=`<div class="card">
@@ -1832,7 +1852,7 @@ async function startLive(e){
    if(A.error){pendFp=null;const now=performance.now();flash(A.error,'err',3500);if(now-lastErrTone>3000){tone([330,250],0.14);buzz([60,60,60]);lastErrTone=now;}coolUntil=now+1200;stable=0;busy=false;return;}
    const fp=fpOf(A.ans);
    session.fps=session.fps||new Set();
-   if((needLost&&fp===lastFp)||session.fps.has(fp)){recheckAt=performance.now()+900;pendFp=null;flash(fp===lastFp?'Phiếu này vừa chấm xong. Đặt phiếu tiếp theo vào khung.':`Phiếu này đã chấm trong lượt này (SBD ${A.ans.sbd&&!/_/.test(A.ans.sbd)?A.ans.sbd:'trống'}, mã đề ${A.ans.made}). Đặt phiếu khác vào khung.`,'ok',1200);busy=false;return;}
+   if((needLost&&fp===lastFp)||session.fps.has(fp)){recheckAt=performance.now()+900;pendFp=null;flash(fp===lastFp?'Phiếu này vừa chấm xong. Đặt phiếu tiếp theo vào khung.':`Phiếu này đã chấm rồi (SBD ${A.ans.sbd&&!/_/.test(A.ans.sbd)?A.ans.sbd:'trống'}, mã đề ${A.ans.made}). Đặt phiếu khác vào khung.`,'ok',1200);busy=false;return;}
    const now2=performance.now();
    // Ô lưng chừng: không tự cho điểm
    if(A.unsure.length&&!force){pendFp=null;unsureTries++;
@@ -1980,6 +2000,7 @@ async function xdReadDocx(buf){
  const doc=new DOMParser().parseFromString(xml,'application/xml');if(doc.getElementsByTagName('parsererror').length)throw new Error('file Word bị lỗi, không đọc được nội dung.');
  const body=doc.getElementsByTagNameNS(WNS,'body')[0];
  for(const p of [...body.getElementsByTagNameNS(WNS,'p')])flattenP(p);
+ await xdLiveNumbering(zip,doc,body);
  // Tách đoạn có xuống dòng (Shift+Enter) khi phần sau là "PHẦN …", "Câu …", "A." hoặc "a)"
  for(const p of wkids(body,'p')){const t=pText(p);const brs=[];let k=0;for(const ch of t){if(ch==='\n')brs.push(k);k++;}
   if(!brs.length)continue;const cuts=[0];for(const b of brs){const rest=t.slice(b+1);if(RX.part.test(rest)||RX.q.test(rest)||/^\s*[A-D]\s*[.)]/.test(rest)||RX.stm.test(rest)||RX.het.test(rest.split('\n')[0]))cuts.push(b,b+1);}
@@ -1989,6 +2010,24 @@ async function xdReadDocx(buf){
   text:isW(n,'p')?nfc(pText(n)):isW(n,'tbl')?nfc([...n.getElementsByTagNameNS(WNS,'p')].map(pText).join(' | ')):''}));
  return{zip,doc,body,blocks};}
 
+// Đề đánh "Câu 1.", "A.", "a)" bằng chức năng đánh số tự động của Word: chuyển số tự động thành chữ thật
+async function xdLiveNumbering(zip,doc,body){const nf=zip.file('word/numbering.xml');if(!nf)return;
+ const nd=new DOMParser().parseFromString(await nf.async('string'),'application/xml');const abs={},nums={};
+ for(const an of nd.getElementsByTagNameNS(WNS,'abstractNum')){const id=an.getAttributeNS(WNS,'abstractNumId'),lv={};
+  for(const l of an.getElementsByTagNameNS(WNS,'lvl')){const il=l.getAttributeNS(WNS,'ilvl'),f=wkid(l,'numFmt'),t=wkid(l,'lvlText'),st=wkid(l,'start');lv[il]={fmt:f?f.getAttributeNS(WNS,'val'):'decimal',text:t?t.getAttributeNS(WNS,'val'):'',start:st?+st.getAttributeNS(WNS,'val'):1};}
+  abs[id]=lv;}
+ for(const n of nd.getElementsByTagNameNS(WNS,'num')){const a=wkid(n,'abstractNumId');if(a)nums[n.getAttributeNS(WNS,'numId')]=abs[a.getAttributeNS(WNS,'val')]||{};}
+ const cnt={};let prevKey=null,letterRun=0;
+ for(const p of wkids(body,'p')){const pr=wkid(p,'pPr'),np=pr&&wkid(pr,'numPr');if(!np){prevKey=null;continue;}
+  const il=(wkid(np,'ilvl')||{getAttributeNS:()=>0}).getAttributeNS(WNS,'val')||'0',id=(wkid(np,'numId')||{getAttributeNS:()=>''}).getAttributeNS(WNS,'val');
+  const L=(nums[id]||{})[il];if(!L||!L.text)continue;const isQ=/c[âa]u/i.test(L.text),isLet=/letter/i.test(L.fmt);if(!isQ&&!isLet)continue;
+  const key=id+':'+il;let n;
+  if(isQ){cnt[key]=(cnt[key]||L.start-1)+1;n=cnt[key];}
+  else{letterRun=prevKey===key?letterRun+1:0;n=letterRun+1;}
+  prevKey=key;
+  const v=L.fmt==='upperLetter'?String.fromCharCode(64+n):L.fmt==='lowerLetter'?String.fromCharCode(96+n):String(n);
+  const label=L.text.replace(/%\d/,v)+' ';
+  pr.removeChild(np);const r=mkRun(doc,label,rPrOf(p.getElementsByTagNameNS(WNS,'r')[0]),isQ?true:null);p.insertBefore(r,pr.nextSibling);}}
 /* Phân tích cấu trúc đề từ danh sách khối (dùng chung cho Word) */
 function xdParse(D){
  const doc=D.doc,X={header:[],parts:[],footer:[],keyBlocks:[],sect:null,warn:[]};let cur=null,q=null,stage='head',ord=0,pendGroup=null;
@@ -2489,6 +2528,11 @@ function xdSubject(){const T=(xdTitleText()+' '+XDS.name).normalize('NFC').toUpp
  const A=asciiName(XDS.name).toLowerCase(),pickA=()=>/toan/.test(A)?'toan':/(vat_?li|vat_?ly|hoa|sinh|dia)/.test(A)?'khtn':/(lich_?su|tin_?hoc|tin\d|cong_?nghe|ktpl|gdkt)/.test(A)?'xh':/(anh|tieng_?anh)/.test(A)?'nn':null;
  const sub=pick(S)||pick(T)||pickA();const _u=/TOÁN/.test(T)?'toan':/(VẬT L[ÍÝ]|HÓA|HOÁ|SINH HỌC|ĐỊA L[ÍÝ])/.test(T)?'khtn':/(LỊCH SỬ|TIN HỌC|CÔNG NGHỆ|KINH TẾ|PHÁP LUẬT|GDKT)/.test(T)?'xh':/(TIẾNG ANH|NGOẠI NGỮ)/.test(T)?'nn':null;
  return{sub,name:m?titleCase(m[2].trim()):''};}
+// Tên bài kiểm tra gợi ý: "Giữa kì I – Tin học 10" lấy từ tiêu đề đề gốc, không có thì từ tên file
+function xdExamName(){const I=XDS.X.pdf?xdHeadInfo(XDS.X.pages[0].lines.slice(0,12).map(l=>l.text)):xdHeadInfo(XDS.X.header.flatMap(n=>isW(n,'p')?[pText(n)]:[...n.getElementsByTagNameNS(WNS,'p')].map(pText)));
+ const k=(I.name||'').match(/(GI[ỮU]A|CU[ỐO]I)\s*(H[ỌO]C\s*)?K[ỲÌY]\s*(I{1,2}|\d)/i),kn=k?titleCase(k[1].toLowerCase())+' kì '+k[3].toUpperCase():'';
+ const sc=t=>{t=t.toLowerCase();return t.charAt(0).toUpperCase()+t.slice(1);};const subj=I.subj?sc(I.subj):xdSubject().name;const nm=[kn,subj].filter(Boolean).join(' – ');
+ return nm||XDS.name.replace(/[_]+/g,' ').replace(/\s+/g,' ').trim();}
 function xdCounts(){const c=[0,0,0];for(const P of XDS.X.parts)if(P.kind<4)c[P.kind-1]+=P.qs.length;return c;}
 async function xdLoad(file){
  const name=file.name||'de',ext=(name.split('.').pop()||'').toLowerCase();
@@ -2574,7 +2618,7 @@ async function xdGenerate(subj){
  btn.disabled=false;}
 function xdToExam(){const d=XDS&&XDS.done;if(!d)return;const sheets=[{rows:d.rows}];const I=inspectKeyFile(sheets);const[n1,n2,n3]=I.counts;
  const ml=String(d.codes[0]).length,keys=parseKeySheets({n1,n2,n3,madeLen:ml},sheets);let miss=0;for(const m in keys){const k=keys[m];miss+=k.p1.filter(x=>!x).length+k.p2.flat().filter(x=>x==null).length+k.p3.filter(x=>!x).length;}
- const sub=xdSubject().sub;go('examForm',{pre:{file:XDS.name,name:d.title.slice(0,80),tpl:d.tpl||(sub||'tong'),n1,n2,n3,madeLen:ml,p3pt:sub==='toan'?0.5:0.25,keys,made:Object.keys(keys).sort(),miss}});}
+ const sub=xdSubject().sub;go('examForm',{pre:{file:XDS.name,name:xdExamName().slice(0,80),tpl:d.tpl||(sub||'tong'),n1,n2,n3,madeLen:ml,p3pt:sub==='toan'?0.5:0.25,keys,made:Object.keys(keys).sort(),miss}});}
 
 /* ---------- Bài đã chấm ---------- */
 let resOrder={eid:null,ids:[]};
@@ -2653,7 +2697,7 @@ V.result=async(p)=>{
  const ord=resOrder.eid===e.id?resOrder.ids:[],ix=ord.indexOf(r.id),prevId=ix>0?ord[ix-1]:null,nextId=ix>=0&&ix<ord.length-1?ord[ix+1]:null;
  return{title:dn(r)||'SBD '+sbdTxt(r),act:`<button class="act" id="rShare">Lưu ảnh</button>`,html:`
  ${ix>=0&&ord.length>1?`<div class="rnav"><button class="btn" id="rPrev"${prevId?'':' disabled'}>‹ Bài trước</button><span class="num">${ix+1} / ${ord.length}</span><button class="btn" id="rNext"${nextId?'':' disabled'}>Bài sau ›</button></div>`:''}
- <div class="card"><div class="row"><div class="grow"><h3>${esc(dn(r)||'Chưa rõ tên')}</h3><div class="meta num"><span>${esc(r.timeStr)}</span></div></div><div class="score" style="font-size:44px">${r.score?fmt(r.score.total):'–'}</div></div>
+ <div class="card"><div class="row"><div class="grow"><h3>${esc(dn(r)||'Chưa rõ tên')}</h3><div class="meta num"><span>${esc(r.timeStr)}</span></div></div><div class="score" style="font-size:44px;color:${r.score&&r.score.total>=(e.scale10?10:examMax(e))/2?'var(--ok)':'var(--pen)'}">${r.score?fmt(r.score.total):'–'}</div></div>
  ${scoreBlock(e,r)}${issueHtml(r)}</div>
  <button class="zoomin" id="rZoom" aria-label="Phóng to ảnh bài làm"><canvas id="rImg" class="sheetimg" width="840" height="1188"></canvas><span class="zbadge">${ZOOMI} Chạm để phóng to</span></button>
  <div class="note">Trên ảnh, mỗi câu khoanh một vòng tại đáp án đúng. Xanh lá: tô đúng · Đỏ: tô sai · Vàng: bỏ trống, tô nhiều ô hoặc tô mờ Mã đề và SBD máy đọc được khoanh xanh lá.</div>
@@ -2814,7 +2858,7 @@ V.classEdit=async(p)=>{
 /* ---------- Phiếu trả lời ---------- */
 V.sheets=async()=>({title:'Tải phiếu trả lời',html:`
  <div class="note">Mỗi file là đúng một phiếu, chèn thẳng được vào đề thi (Word, PDF) hoặc in riêng. Ảnh PNG có độ phân giải 300 dpi, giữ đúng kích thước khi chèn: phiếu trọn trang 21 × 29,7 cm, phiếu nửa trang 21 × 14,85 cm. Khi in, chọn tỉ lệ 100% (kích thước thực), không chọn "vừa trang", để app đọc chính xác.</div>
- <div class="thumbs">${OWN_IDS.map(id=>{const T=TPLS[id],half=fmtOf(T).id==='a5';return`<div class="card"><canvas data-th="${id}" width="420" height="${half?297:594}" aria-label="Xem trước phiếu mẫu ${T.code}"></canvas><b>Mẫu ${T.code} · ${esc(T.short)}</b><span class="note">${esc(T.subjects)}<br>Số câu: ${T.p1}; ${T.p2}; ${T.p3}</span><span class="pill${half?' ok':''}">${half?'Nửa trang A4 · 21 × 14,85 cm':'Trọn trang A4 · 21 × 29,7 cm'}</span><button class="btn sm pri" data-pdf="${id}">Tải PDF</button><button class="btn sm" data-png="${id}">Tải ảnh PNG</button></div>`}).join('')}</div>`,
+ <div class="thumbs">${OWN_IDS.map(id=>{const T=TPLS[id],half=fmtOf(T).id==='a5';return`<div class="card th"><canvas data-th="${id}" width="420" height="${half?297:594}" aria-label="Xem trước phiếu mẫu ${T.code}"></canvas><div class="thi"><b>Mẫu ${T.code} · ${esc(T.short)}</b><span class="note">${esc(T.subjects)}</span><span class="note num">Phần I: ${T.p1} · Phần II: ${T.p2} · Phần III: ${T.p3} câu</span><span class="pill${half?' ok':''}">${half?'Nửa trang A4':'Trọn trang A4'}</span><div class="row" style="gap:8px;flex-wrap:nowrap"><button class="btn sm pri grow" data-pdf="${id}">Tải PDF</button><button class="btn sm grow" data-png="${id}">Ảnh PNG</button></div></div></div>`}).join('')}</div>`,
  async after(){
   await fontsReady();
   document.querySelectorAll('[data-th]').forEach(c=>drawSheet(c.getContext('2d'),lay(c.dataset.th),2));
@@ -2851,18 +2895,20 @@ V.settings=async()=>({title:'Cài đặt & sao lưu',html:`
 /* ---------- Hướng dẫn ---------- */
 V.guide=async()=>({title:'Hướng dẫn',html:`
  <div class="card"><h3>Quy trình chấm</h3><ol class="steps">
- <li><b>Tải phiếu trả lời</b> đúng nhóm môn, in A4 tỉ lệ 100%. Mẫu nửa trang (Sử – Tin – CN – KTPL, Ngoại ngữ, Tổng hợp nửa trang) có khổ 21 × 14,85 cm, chèn được vào cuối đề thi hoặc in 2 phiếu trên một tờ A4.</li>
+ <li><b>Xáo đề thi</b> (nếu có đề gốc Word/PDF): app xáo ra các mã đề theo mẫu đề của Bộ, chèn sẵn phiếu trả lời có in mã đề, xuất đáp án Excel và tạo luôn bài kiểm tra để chấm. Khi đó bỏ qua bước 2 và 4.</li>
+ <li><b>Tải phiếu trả lời</b> (nếu không dùng Xáo đề): chọn đúng nhóm môn, in A4 tỉ lệ 100%. Mẫu nửa trang (Sử – Tin – CN – KTPL, Ngoại ngữ, Tổng hợp nửa trang) in được 2 phiếu trên một tờ A4.</li>
  <li><b>Lớp học</b> (không bắt buộc): tạo lớp, nhập SBD và họ tên, hoặc nhập từ file Excel mẫu.</li>
- <li><b>Danh sách chấm → +</b>: tạo bài kiểm tra, chọn mẫu phiếu và số câu từng phần. Nếu đề làm bằng app xáo đề, chọn <b>Từ file đáp án app xáo đề</b>: app tự điền môn, tên bài, số câu, mẫu phiếu và nạp đáp án mọi mã đề, bỏ qua bước nhập đáp án.</li>
- <li><b>Đáp án → +</b>: nhập từng mã đề bằng tay, bằng file Excel (mỗi cột một mã đề, mỗi dòng một câu, chia Phần I / II / III; tải file mẫu trong mục Đáp án), hoặc tô đáp án lên một phiếu rồi quét.</li>
- <li><b>Chấm bài → Bắt đầu tự động quét</b>: đưa camera lên phiếu, app tự căn 4 góc, tự chụp, chấm và lưu, rồi bíp một tiếng. Thay phiếu tiếp theo là app quét tiếp. Có thể dùng "Chụp từng phiếu" nếu không mở được camera trực tiếp.</li>
+ <li><b>Danh sách chấm → + Tạo mới</b>: tạo bài kiểm tra, chọn mẫu phiếu và số câu từng phần. Nếu đề làm bằng app xáo đề, chọn <b>Từ file đáp án app xáo đề</b>: app tự điền môn, tên bài, số câu, mẫu phiếu và nạp đáp án mọi mã đề, bỏ qua bước nhập đáp án.</li>
+ <li><b>Đáp án → nút + ở góc dưới</b>: nhập từng mã đề bằng tay, bằng file Excel (mỗi cột một mã đề, mỗi dòng một câu, chia Phần I / II / III; tải file mẫu trong mục Đáp án), hoặc tô đáp án lên một phiếu rồi quét.</li>
+ <li><b>Chấm bài</b> (ngay trên thẻ bài kiểm tra trong Danh sách chấm): camera tự mở, đưa 4 ô vuông đen của phiếu vào 4 khung xanh, app tự căn 4 góc, tự chụp, chấm và lưu, rồi bíp một tiếng. Thay phiếu tiếp theo là app quét tiếp. Có thể dùng "Chụp từng phiếu" nếu không mở được camera trực tiếp.</li>
  <li><b>Bài đã chấm</b>: xem ảnh có khoanh đúng/sai, sửa SBD hoặc mã đề nếu học sinh tô nhầm. Mục "Cần kiểm tra" gom các bài máy nghi ngờ.</li>
  <li><b>Mã đề và SBD</b>: mã đề 3 chữ số tô 3 cột liền nhau, lệch trái hay lệch phải trong 4 cột đều được. SBD không bắt buộc: học sinh bỏ trống thì app vẫn chấm, chỉ cần SBD khi muốn app tự điền họ tên theo danh sách lớp. Tắt hẳn ở Sửa bài kiểm tra → Quét số báo danh.</li>
  <li><b>Chọn lớp học</b>: gắn một hoặc nhiều lớp để app tự điền họ tên theo SBD. Học sinh không có trong danh sách thì dùng "Đọc họ tên bằng AI" ở mục Xuất kết quả (chỉ có khi mở app trong Claude).</li>
+ <li><b>Sửa / xóa bài kiểm tra</b>: bấm nút ⋮ trên thẻ bài kiểm tra trong Danh sách chấm (hoặc nút Xóa ở cuối trang bài kiểm tra).</li>
  <li><b>Xuất kết quả</b>: bảng điểm Excel mỗi lớp một trang (STT, SBD, họ tên, lớp, điểm từng phần, tổng điểm), hoặc cả thư mục ảnh bài làm dạng ZIP.</li></ol></div>
  <div class="card"><h3>Số câu và cách tính điểm</h3><div class="note">Mỗi bài kiểm tra tự đặt số câu và điểm từng phần, kể cả điểm Phần II theo số ý đúng. Giá trị điền sẵn theo quy chế thi tốt nghiệp (Phần I 0,25/câu; Phần II 0,1 · 0,25 · 0,5 · 1; Phần III Toán 0,5, môn khác 0,25). Kiểm tra thường xuyên nên dùng mẫu Tổng hợp (tối đa 40; 8; 6 câu). Có thể bật quy đổi về thang 10.</div></div>
  <div class="card"><h3>Mã QR</h3><div class="note">
- <b>Chia sẻ đáp án:</b> Đáp án → Chia sẻ mã QR. Đồng nghiệp vào Danh sách chấm → + → Từ mã QR đáp án (chụp ảnh mã hoặc quét bằng camera): bài kiểm tra được tạo đủ mã đề, số câu và cách tính điểm.<br>
+ <b>Chia sẻ đáp án:</b> Đáp án → Chia sẻ mã QR. Đồng nghiệp vào Danh sách chấm → + Tạo mới → Từ mã QR đáp án (chụp ảnh mã hoặc quét bằng camera): bài kiểm tra được tạo đủ mã đề, số câu và cách tính điểm.<br>
  <b>Nhập đáp án từ QR vào bài có sẵn:</b> Đáp án → + → Ảnh mã QR đáp án hoặc Quét mã QR bằng camera.<br>
  <b>Tra điểm cho học sinh:</b> Xuất kết quả → Tạo mã QR tra điểm, chọn lớp. Học sinh quét bằng camera điện thoại là mở được trang xem điểm từng phần và câu làm sai của từng bạn trong lớp. Tính năng này cần bản cài riêng trên GitHub Pages vì mã QR trỏ tới địa chỉ đó.</div></div>
  <div class="card"><h3>Không chọn được file Excel?</h3><div class="note">Một số điện thoại không cho trang web chọn file Excel. Khi đó mở file trong ứng dụng Excel hoặc Google Trang tính, chọn cả bảng đáp án, bấm Sao chép, rồi trong app chọn <b>Dán bảng từ Excel</b> (ở mục Đáp án → +, hoặc Danh sách chấm → +).</div></div>
