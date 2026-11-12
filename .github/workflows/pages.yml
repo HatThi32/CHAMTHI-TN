@@ -1,0 +1,25 @@
+# Mỗi lần cập nhật app (nhánh webapp) → chép trang web sang nhánh gh-pages
+# để bản cài trên iPhone/iPad (https://hatthi32.github.io/CHAMTHI-TN/) luôn mới.
+name: Cap nhat trang web iPhone
+on:
+  push:
+    branches: [webapp]
+    paths: ['index.html','manifest.webmanifest','sw.js','icon-*.png','apple-touch-icon.png']
+permissions:
+  contents: write
+jobs:
+  pages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Chep sang gh-pages
+        run: |
+          mkdir /tmp/site && cp index.html manifest.webmanifest sw.js icon-192.png icon-512.png apple-touch-icon.png /tmp/site/ && touch /tmp/site/.nojekyll
+          # đổi tên bộ nhớ đệm để iPhone tải bản mới
+          sed -i "s/const C='chamthi-v[0-9a-z]*'/const C='chamthi-${GITHUB_SHA::8}'/" /tmp/site/sw.js
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin gh-pages
+          git switch gh-pages
+          git rm -rq . && cp -a /tmp/site/. . && git add -A
+          git diff --cached --quiet || (git commit -m "Cập nhật trang web từ webapp ${GITHUB_SHA::8}" && git push origin gh-pages)
