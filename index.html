@@ -1645,7 +1645,7 @@ function showKeyQR(e){
 /* ---------- Mã QR tra điểm cho học sinh ---------- */
 function appBase(){try{const v=localStorage.getItem('ct_base');if(v)return v;}catch(e){}
  if(/^https?:$/.test(location.protocol)&&!/claude\.(ai|site|com)|claudeusercontent|androidplatform\.net|localhost/.test(location.hostname))return location.origin+location.pathname;return DEFAULT_BASE;}
-const BUILD='12/11/2026 21:55';
+const BUILD='14/11/2026 22:12';
 const DEFAULT_BASE='https://hatthi32.github.io/CHAMTHI-TN/';
 const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const unb64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
@@ -2108,7 +2108,7 @@ function dsNorm(v){let s=nfc(v).replace(/\b[a-d]\s*[).:]\s*/gi,' ').toUpperCase(
  s=s.replace(/[^ĐDST]/g,'').replace(/[DT]/g,'Đ');return s.length===4?s:(s.length===1?s:'');}
 
 // Phương án nhắc tới phương án khác ("Cả A và B đều đúng", "Tất cả các phương án trên") → không đảo phương án câu đó
-const XD_REF=/(t[ấa]t\s+c[ảa]\s+(c[áa]c\s+)?(ph[ươu][ơo]ng\s+[áa]n|đ[áa]p\s+[áa]n|[ýy]|c[âa]u)\s+(tr[êe]n|đ[ềe]u)|t[ấa]t\s+c[ảa]\s+đ[ềe]u|c[ảa]\s+(ba|hai|[A-D])(?![\wÀ-ỹ])|(ph[ươu][ơo]ng\s+[áa]n|đ[áa]p\s+[áa]n)\s+[A-D](?![\wÀ-ỹ])|(^|\s)[A-D]\s*(v[àa]|,|ho[ặa]c)\s*[A-D](?![\wÀ-ỹ])|đ[ềe]u\s+(đ[úu]ng|sai)(?![\wÀ-ỹ])|kh[ôo]ng\s+c[óo]\s+(ph[ươu][ơo]ng\s+[áa]n|đ[áa]p\s+[áa]n))/i;
+const XD_REF=/(t[ấa]t\s+c[ảa]\s+(c[áa]c\s+)?(ph[ươu][ơo]ng\s+[áa]n|đ[áa]p\s+[áa]n|[ýy]|c[âa]u)\s+(tr[êe]n|đ[ềe]u)|t[ấa]t\s+c[ảa]\s+đ[ềe]u|c[ảa]\s+(ba|hai|[A-D])(?![\wÀ-ỹ])(?!\s+(h[àa]ng|c[ộo]t|[ôo]\b|t[ừu]\b|l[ầa]n|b[ạa]n|ng[ưu][ờo]i|s[ốo]\b|ph[íi]a|b[êe]n|chi[ềe]u|m[ặa]t|đ[ầa]u|g[óo]c|c[ạa]nh|tay|ch[âa]n|th[ẻe]|ph[ầa]n\s+t[ửu]|tr[ưu][ờo]ng|lo[ạa]i|nh[óo]m|d[òo]ng))|(ph[ươu][ơo]ng\s+[áa]n|đ[áa]p\s+[áa]n)\s+[A-D](?![\wÀ-ỹ])|(^|\s)[A-D]\s*(v[àa]|,|ho[ặa]c)\s*[A-D](?![\wÀ-ỹ])|đ[ềe]u\s+(đ[úu]ng|sai)(?![\wÀ-ỹ])|kh[ôo]ng\s+c[óo]\s+(ph[ươu][ơo]ng\s+[áa]n|đ[áa]p\s+[áa]n))/i;
 /* ---------- Bảng đáp án cuối đề ---------- */
 function tblGrid(tbl){return wkids(tbl,'tr').map(tr=>wkids(tr,'tc').flatMap(tc=>{const span=+(wkid(wkid(tc,'tcPr')||tc,'gridSpan')?.getAttributeNS(WNS,'val')||1);const v=nfc([...tc.getElementsByTagNameNS(WNS,'p')].map(pText).join(' ')).trim();return [v,...Array(span-1).fill('')];}));}
 function xdApplyKeyTable(X){
@@ -2206,8 +2206,13 @@ function xdPlan(X,code,opt){const R=xdRng(code*7919+13),plan=[];
   for(const q of P.qs){if(inG.has(q))continue;units.push({qs:[q]});}for(const g of P.groups)units.push({qs:g.qs,g});
   units.sort((a,b)=>P.qs.indexOf(a.qs[0])-P.qs.indexOf(b.qs[0]));
   const ord=P.kind===4||!opt.qs?units:shuffled(units,R);const items=[];
+  // Cân bằng đáp án: mỗi chữ A–D đúng xấp xỉ n/4 lần, tránh 3 câu liền cùng đáp án
+  let bag=[];if(P.kind===1&&opt.opts){const m=P.qs.filter(q=>q.opts.length===4&&!q.fixOpts&&/^[A-D]$/.test(q.key||'')).length;
+   const base=[];for(let i=0;i<m;i++)base.push(i%4);for(let t=0;t<40;t++){bag=shuffled(base,R);if(!bag.some((v,i)=>i>1&&v===bag[i-1]&&v===bag[i-2]))break;}}
   for(const u of ord)for(const q of u.qs){let it={q,g:u.g&&u.qs[0]===q?u.g:null};
-   if(P.kind===1&&q.opts.length===4){const o=q.fixOpts||!opt.opts?q.opts.slice():shuffled(q.opts,R);it.opts=o;it.key=q.key?'ABCD'[o.findIndex(x=>x.L===q.key)]:'';}
+   if(P.kind===1&&q.opts.length===4){const o=q.fixOpts||!opt.opts?q.opts.slice():shuffled(q.opts,R);
+    if(!q.fixOpts&&opt.opts&&/^[A-D]$/.test(q.key||'')&&bag.length){const tg=bag.shift(),ci=o.findIndex(x=>x.L===q.key);if(ci>=0&&ci!==tg){const tmp=o[tg];o[tg]=o[ci];o[ci]=tmp;}}
+    it.opts=o;it.key=q.key?'ABCD'[o.findIndex(x=>x.L===q.key)]:'';}
    else if(P.kind===1)it.key=q.key||'';
    if(P.kind===2&&q.stms.length===4){const s=opt.stms?shuffled(q.stms,R):q.stms.slice();it.stms=s;it.key=q.key&&q.key.length===4?s.map(x=>q.key['abcd'.indexOf(x.L)]).join(''):'';}
    else if(P.kind===2)it.key=q.key||'';
@@ -2251,7 +2256,7 @@ function partXml(P,idx,n,from){const roman=['I','II','III','IV'][idx]||String(id
  const[h,t]=PART_STD[P.kind](n);const tt=from>1?t.replace(/từ câu 1 đến câu \d+/,`từ câu ${from} đến câu ${from+n-1}`):t;
  return wp(wr('PHẦN '+roman+'. ',{b:true})+wr(tt),{jc:'both',before:120,after:40,keep:true});}
 // Chuẩn hoá phông/cỡ chữ, khoảng cách dòng của đoạn văn trong đề gốc
-const SYMF=/symbol|wingding|webding|mt\s*extra|cambria\s*math|math/i;
+const SYMF=/symbol|wingding|webding|mt\s*extra|cambria\s*math|math|courier|consolas|mono/i;
 function normRuns(el){const rs=isW(el,'r')?[el]:[...el.getElementsByTagNameNS(WNS,'r')];
  for(const r of rs){let pr=wkid(r,'rPr');if(!pr){pr=r.ownerDocument.createElementNS(WNS,'w:rPr');r.insertBefore(pr,r.firstChild);}
   const rf=wkid(pr,'rFonts');if(rf&&SYMF.test(rf.getAttributeNS(WNS,'ascii')||''))continue;
@@ -2269,7 +2274,9 @@ function emptyP(n){if(!isW(n,'p'))return false;if(pText(n).replace(/[\s\u00A0\f]
  return !(n.getElementsByTagNameNS(WNS,'drawing').length||n.getElementsByTagNameNS(WNS,'pict').length||n.getElementsByTagNameNS(WNS,'object').length||n.getElementsByTagNameNS(MNS,'oMath').length);}
 function stdP(doc,p,opts){const c=p.cloneNode(true);if(!isW(c,'p'))return normTbl(c);const old=wkid(c,'pPr');
  const hasImg=c.getElementsByTagNameNS(WNS,'drawing').length+c.getElementsByTagNameNS(WNS,'pict').length>0,txt=pText(c).replace(OBJ,'').trim();
- const np=stdPPr(doc,{...opts,jc:hasImg&&!txt?'center':(opts&&opts.jc)||'both'});
+ // Dòng mã lệnh (toàn bộ chữ bằng phông đơn cách) → căn trái, thụt vào, không dãn chữ
+ const rs=[...c.getElementsByTagNameNS(WNS,'r')].filter(r=>[...r.getElementsByTagNameNS(WNS,'t')].map(t=>t.textContent).join('').trim()),isCode=rs.length>0&&rs.every(r=>{const pr=wkid(r,'rPr'),rf=pr&&wkid(pr,'rFonts');return !!rf&&/courier|consolas|mono/i.test(rf.getAttributeNS(WNS,'ascii')||'');});
+ const np=stdPPr(doc,isCode?{...opts,jc:'left',ind:Math.max(567,(opts&&opts.ind)||0),hang:0,before:0}:{...opts,jc:hasImg&&!txt?'center':(opts&&opts.jc)||'both'});
  // giữ đánh số/gạch đầu dòng của danh sách trong thân câu
  const num=old&&wkid(old,'numPr');if(num)np.insertBefore(num.cloneNode(true),np.firstChild);
  if(old)c.replaceChild(np,old);else c.insertBefore(np,c.firstChild);normRuns(c);return c;}
@@ -2616,9 +2623,14 @@ async function xdGenerate(subj){
   XDS.lastZip=blob;await saveFile(fname,blob);
  }catch(err){out.innerHTML=`<div class="warnbox">Không tạo được đề: ${esc(err.message)}</div>`;console.error(err);}
  btn.disabled=false;}
+// Điểm mỗi câu Phần I ghi trong phần đáp án của đề (vd "Mỗi câu trả lời đúng thí sinh được 0,3 điểm"); không ghi thì 0,25
+function xdP1pt(){const X=XDS&&XDS.X;if(!X)return 0.25;let part=0;
+ for(const b of X.keyBlocks||[]){const t=nfc(String(b.text||'')).replace(/\s+/g,' ');const pm=t.match(/PH[ẦA]N\s+([IVX]+)\b/i);if(pm)part=pm[1].toUpperCase();
+  if(part!=='I')continue;const m=t.match(/m[ỗo]i\s+c[âa]u[^()]{0,60}?(\d+(?:[.,]\d+)?)\s*đi[ểe]m/i);if(m){const v=+m[1].replace(',','.');if(v>0&&v<=2)return v;}}
+ return 0.25;}
 function xdToExam(){const d=XDS&&XDS.done;if(!d)return;const sheets=[{rows:d.rows}];const I=inspectKeyFile(sheets);const[n1,n2,n3]=I.counts;
  const ml=String(d.codes[0]).length,keys=parseKeySheets({n1,n2,n3,madeLen:ml},sheets);let miss=0;for(const m in keys){const k=keys[m];miss+=k.p1.filter(x=>!x).length+k.p2.flat().filter(x=>x==null).length+k.p3.filter(x=>!x).length;}
- const sub=xdSubject().sub;go('examForm',{pre:{file:XDS.name,name:xdExamName().slice(0,80),tpl:d.tpl||(sub||'tong'),n1,n2,n3,madeLen:ml,p3pt:sub==='toan'?0.5:0.25,keys,made:Object.keys(keys).sort(),miss}});}
+ const sub=xdSubject().sub;go('examForm',{pre:{file:XDS.name,name:xdExamName().slice(0,80),tpl:d.tpl||(sub||'tong'),n1,n2,n3,madeLen:ml,p1pt:xdP1pt(),p3pt:sub==='toan'?0.5:0.25,keys,made:Object.keys(keys).sort(),miss}});}
 
 /* ---------- Bài đã chấm ---------- */
 let resOrder={eid:null,ids:[]};
