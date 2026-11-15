@@ -1645,7 +1645,7 @@ function showKeyQR(e){
 /* ---------- Mã QR tra điểm cho học sinh ---------- */
 function appBase(){try{const v=localStorage.getItem('ct_base');if(v)return v;}catch(e){}
  if(/^https?:$/.test(location.protocol)&&!/claude\.(ai|site|com)|claudeusercontent|androidplatform\.net|localhost/.test(location.hostname))return location.origin+location.pathname;return DEFAULT_BASE;}
-const BUILD='14/11/2026 22:12';
+const BUILD='15/11/2026 16:25';
 const DEFAULT_BASE='https://hatthi32.github.io/CHAMTHI-TN/';
 const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const unb64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
@@ -2179,7 +2179,10 @@ function optPPr(doc,src,tabs,indLeft){const pr=src?src.cloneNode(true):doc.creat
  return pr;}
 function indOf(pPr){const ind=pPr&&wkid(pPr,'ind');return ind?+(ind.getAttributeNS(WNS,'left')||ind.getAttributeNS(WNS,'start')||0):0;}
 function optLen(doc,o){if(o.paras.length)return 999;const p=tmpP(doc,o.nodes[0]);if(p.getElementsByTagNameNS(WNS,'drawing').length||p.getElementsByTagNameNS(WNS,'pict').length||p.getElementsByTagNameNS(WNS,'object').length&&[...p.getElementsByTagNameNS(WNS,'object')].some(ob=>+(ob.getAttributeNS(WNS,'dxaOrig')||0)>2400))return 999;
- const t=pText(p);let L=0;for(const ch of t)L+=ch===OBJ?6:1;return L;}
+ const t=pText(p);let L=0;for(const ch of t)L+=ch===OBJ?6:1;
+ // chữ phông đơn cách (mã lệnh) rộng hơn chữ thường ~1,35 lần
+ for(const r of p.getElementsByTagNameNS(WNS,'r')){const pr=wkid(r,'rPr'),rf=pr&&wkid(pr,'rFonts');if(rf&&/courier|consolas|mono/i.test(rf.getAttributeNS(WNS,'ascii')||''))L+=0.35*[...r.getElementsByTagNameNS(WNS,'t')].map(x=>x.textContent).join('').length;}
+ return L;}
 function buildOpts(doc,q,order,X){const W=textWidthTw(X),base=q.opts[0],ind=indOf(base.pPr),avail=W-ind,len=Math.max(...order.map(o=>optLen(doc,o))),cw=105;
  const fit=c=>len*cw+500<=avail/c;const cols=fit(4)?4:fit(2)?2:1,colW=avail/cols,out=[];
  for(let r=0;r<4;r+=cols){const tabs=[];for(let c=1;c<cols;c++)tabs.push(ind+c*colW);const pr=optPPr(doc,base.pPr,tabs,ind);const nodes=[];
@@ -2197,7 +2200,7 @@ function fillCode(doc,nodes,code){let done=false;const out=nodes.map(n=>n.cloneN
  if(!done){const pr=doc.createElementNS(WNS,'w:pPr'),jc=doc.createElementNS(WNS,'w:jc');jc.setAttributeNS(WNS,'w:val','right');pr.appendChild(jc);out.push(mkP(doc,pr,[mkRun(doc,'Mã đề: '+code,null,true)]));}
  return out;}
 function sheetPara(doc,rid,wEmu,hEmu,pageBreak,id){
- const x=`<w:p xmlns:w="${WNS}" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:pPr><w:jc w:val="center"/><w:spacing w:before="0" w:after="0"/></w:pPr>${pageBreak?'<w:r><w:br w:type="page"/></w:r>':''}<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${wEmu}" cy="${hEmu}"/><wp:docPr id="${id}" name="Phieu tra loi ${id}"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${id}" name="phieu.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${wEmu}" cy="${hEmu}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
+ const x=`<w:p xmlns:w="${WNS}" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:pPr><w:spacing w:before="0" w:after="0"/><w:jc w:val="center"/></w:pPr>${pageBreak?'<w:r><w:br w:type="page"/></w:r>':''}<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${wEmu}" cy="${hEmu}"/><wp:docPr id="${id}" name="Phieu tra loi ${id}"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${id}" name="phieu.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${wEmu}" cy="${hEmu}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
  return doc.importNode(new DOMParser().parseFromString(x,'application/xml').documentElement,true);}
 function pageBreakP(doc){const p=doc.createElementNS(WNS,'w:p'),r=doc.createElementNS(WNS,'w:r'),br=doc.createElementNS(WNS,'w:br');br.setAttributeNS(WNS,'w:type','page');r.appendChild(br);p.appendChild(r);return p;}
 // Một phương án xáo cho một mã đề → danh sách câu theo thứ tự mới và đáp án mới
@@ -2239,7 +2242,7 @@ function xdHeaderXml(I,code,{noTable=false}={}){
  const left=L.map((t,i)=>wp(wr(t.toUpperCase(),{b:i===L.length-1,sz:24}),{jc:'center'})).join('')+wp(wr('(Đề có ',{i:true})+wfld('NUMPAGES',24,false,true)+wr(' trang)',{i:true}),{jc:'center',before:60});
  const right=wp(wr(I.name||'ĐỀ KIỂM TRA',{b:true}),{jc:'center'})+(I.year?wp(wr(I.year,{b:true}),{jc:'center'}):'')+wp(wr('Môn: '+(I.subj||'..........').toUpperCase(),{b:true}),{jc:'center'})+wp(wr((I.time||'Thời gian làm bài: ...... phút')+', không kể thời gian phát đề',{i:true,sz:22}),{jc:'center'});
  const cell=(w,inner,border)=>`<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${border?'<w:tcBorders><w:top w:val="single" w:sz="8"/><w:left w:val="single" w:sz="8"/><w:bottom w:val="single" w:sz="8"/><w:right w:val="single" w:sz="8"/></w:tcBorders>':''}<w:vAlign w:val="center"/></w:tcPr>${inner}</w:tc>`;
- const tbl=(ws,cells)=>`<w:tbl><w:tblPr><w:tblW w:w="${STD.tw}" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/><w:insideH w:val="nil"/><w:insideV w:val="nil"/></w:tblBorders><w:tblCellMar><w:left w:w="40" w:type="dxa"/><w:right w:w="40" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${ws.map(w=>`<w:gridCol w:w="${w}"/>`).join('')}</w:tblGrid><w:tr>${cells}</w:tr></w:tbl>`;
+ const tbl=(ws,cells)=>`<w:tbl><w:tblPr><w:tblW w:w="${STD.tw}" w:type="dxa"/><w:tblBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/><w:insideH w:val="nil"/><w:insideV w:val="nil"/></w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="40" w:type="dxa"/><w:right w:w="40" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${ws.map(w=>`<w:gridCol w:w="${w}"/>`).join('')}</w:tblGrid><w:tr>${cells}</w:tr></w:tbl>`;
  const w1=Math.round(STD.tw*0.42),w2=STD.tw-w1;
  let x=tbl([w1,w2],cell(w1,left)+cell(w2,right));
  x+=wp('',{before:0});
@@ -2526,6 +2529,43 @@ async function xdBuildPdfDocx(X,code,opt,sheet,meta={}){
  imgs.forEach((b,i)=>zip.file(`word/media/h${i+1}.png`,b));zip.file('word/document.xml',docXml);zip.file('word/footer_xd.xml',xdFooterXml(code));
  return{blob:await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',compression:'DEFLATE'}),plan};}
 
+/* ---------- Gộp nhiều mã đề vào một file Word để in ----------
+   Mỗi mã đề là một section riêng: đánh lại số trang từ 1, chân trang "Trang x – Mã đề …" (bỏ "/tổng" vì tổng trang của cả file không đúng cho từng mã),
+   mỗi mã bắt đầu ở trang lẻ để in 2 mặt không bị dính sang mặt sau của mã trước. */
+async function xdMergeDocx(blobs){
+ const SHARED=/\/(styles|numbering|footnotes|endnotes|settings|theme|fontTable|webSettings|customXml|stylesWithEffects|glossaryDocument|people|comments\w*)$/;
+ const RNS='http://schemas.openxmlformats.org/package/2006/relationships';
+ const base=await JSZip.loadAsync(blobs[0]);
+ let ct=await base.file('[Content_Types].xml').async('string');let rels=await base.file('word/_rels/document.xml.rels').async('string');
+ const docs=[];for(const b of blobs)docs.push(b===blobs[0]?base:await JSZip.loadAsync(b));
+ const bodies=[];let head='';
+ for(let i=0;i<docs.length;i++){const z=docs[i];let x=await z.file('word/document.xml').async('string');
+  if(!i)head=x.slice(0,x.indexOf('<w:body>')+8);
+  let body=x.slice(x.indexOf('<w:body>')+8,x.lastIndexOf('</w:body>'));
+  const si=body.lastIndexOf('<w:sectPr');let sect=si>=0?body.slice(si):'';if(si>=0)body=body.slice(0,si);
+  if(i){// đổi tên các quan hệ riêng (ảnh, chân trang…) để không trùng với mã đề khác
+   const rx=await z.file('word/_rels/document.xml.rels').async('string');const map={};
+   const rd=new DOMParser().parseFromString(rx,'application/xml');
+   for(const r of rd.getElementsByTagNameNS(RNS,'Relationship')){const id=r.getAttribute('Id'),ty=r.getAttribute('Type')||'',tg=r.getAttribute('Target')||'',ext=r.getAttribute('TargetMode')==='External';
+    if(SHARED.test(ty))continue;const nid='rIdM'+i+'_'+id;map[id]=nid;let ntg=tg;
+    if(!ext){const src='word/'+tg.replace(/^\.?\//,''),dir=src.slice(0,src.lastIndexOf('/')+1),nm=src.slice(src.lastIndexOf('/')+1),dst=dir+'m'+i+'_'+nm;
+     const f=z.file(src);if(f){base.file(dst,await f.async('uint8array'));ntg=tg.slice(0,tg.length-nm.length)+'m'+i+'_'+nm;
+      const pr=src.slice(0,src.lastIndexOf('/'))+'/_rels/'+nm+'.rels',pf=z.file(pr);if(pf)base.file(dst.slice(0,dst.lastIndexOf('/'))+'/_rels/m'+i+'_'+nm+'.rels',await pf.async('uint8array'));
+      const ov=ct.match(new RegExp('<Override PartName="/'+src.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'" ContentType="([^"]+)"/>'));
+      if(ov)ct=ct.replace('</Types>',`<Override PartName="/${dst}" ContentType="${ov[1]}"/></Types>`);}}
+    rels=rels.replace('</Relationships>',`<Relationship Id="${nid}" Type="${ty}" Target="${ntg.replace(/&/g,'&amp;')}"${ext?' TargetMode="External"':''}/></Relationships>`);}
+   const fix=s=>s.replace(/(r:(?:id|embed|link|pict|dm|lo|qs|cs)|o:relid)="([^"]+)"/g,(m,a,v)=>map[v]?`${a}="${map[v]}"`:m);
+   body=fix(body);sect=fix(sect);
+   body=body.replace(/(<w:bookmark(?:Start|End)\b[^>]*?w:id=")(\d+)"/g,(m,a,v)=>a+(+v+i*100000)+'"');}
+  sect=sect.replace(/<w:pgNumType\b[^>]*\/>/g,'').replace(/(<w:sectPr\b[^>]*>)/,'$1');sect=/<w:cols\b/.test(sect)?sect.replace(/(<w:cols\b)/,'<w:pgNumType w:start="1"/>$1'):sect.replace(/(<w:docGrid\b|<\/w:sectPr>)/,'<w:pgNumType w:start="1"/>$1');
+  if(i)sect=sect.replace(/<w:type\b[^>]*\/>/g,'').replace(/(<w:sectPr\b[^>]*>(?:<w:(?:header|footer)Reference\b[^>]*\/>)*)/,'$1<w:type w:val="oddPage"/>');
+  bodies.push({body,sect});}
+ let out='';bodies.forEach((b,i)=>{out+=b.body+(i<bodies.length-1?`<w:p><w:pPr>${b.sect}</w:pPr></w:p>`:b.sect);});
+ out=out.replace(/\s+w14:(?:paraId|textId)="[^"]*"/g,'');let n=0;out=out.replace(/(<wp:docPr\b[^>]*?\bid=")\d+"/g,(m,a)=>a+(++n)+'"');
+ base.file('word/document.xml',head+out+'</w:body></w:document>');base.file('word/_rels/document.xml.rels',rels);base.file('[Content_Types].xml',ct);
+ for(const f of Object.keys(base.files).filter(f=>/^word\/(?:m\d+_)?footer[^/]*\.xml$/.test(f))){const s=await base.file(f).async('string');base.file(f,s.replace(/<w:r>(?:(?!<w:r>)[\s\S])*?<w:t[^>]*>\/<\/w:t><\/w:r><w:fldSimple w:instr=" NUMPAGES ">[\s\S]*?<\/w:fldSimple>/g,''));}
+ return base.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',compression:'DEFLATE'});}
+
 /* ---------- Màn hình Xáo đề ---------- */
 let XDS=null;
 const XD_KN={1:'Phần I · Nhiều lựa chọn',2:'Phần II · Đúng/Sai',3:'Phần III · Trả lời ngắn',4:'Tự luận (giữ nguyên, không chấm bằng phiếu)'};
@@ -2605,10 +2645,11 @@ async function xdGenerate(subj){
  const btn=$('#xdGo');btn.disabled=true;const out=$('#xdOut');out.innerHTML='<div class="note">Đang tạo đề…</div>';
  try{let sheet=null;
   const mkSheet=async code=>{if(!tpl)return null;const F=lay(tpl).F,half=F.id==='a5',wEmu=STD.tw*635,hEmu=Math.round(wEmu*F.H/F.W);return{png:await xdSheetPng(tpl,code,subj.name),w:wEmu,h:hEmu,half};};
-  const zip=new JSZip(),plans=[];
+  const zip=new JSZip(),plans=[],blobs=[];
   for(let i=0;i<codes.length;i++){out.innerHTML=`<div class="note">Đang tạo mã đề ${codes[i]} (${i+1}/${codes.length})…</div>`;await new Promise(r=>setTimeout(r,20));
    sheet=await mkSheet(codes[i]);
-   const r=X.pdf?await xdBuildPdfDocx(X,codes[i],opt,sheet,{subj:subj.name}):await xdBuildDocx(XDS.D,X,codes[i],opt,sheet);plans.push(r.plan);zip.file(`De_${codes[i]}.docx`,r.blob);}
+   const r=X.pdf?await xdBuildPdfDocx(X,codes[i],opt,sheet,{subj:subj.name}):await xdBuildDocx(XDS.D,X,codes[i],opt,sheet);plans.push(r.plan);blobs.push(r.blob);zip.file(`De_${codes[i]}.docx`,r.blob);}
+  out.innerHTML='<div class="note">Đang gộp các mã đề vào một file Word…</div>';const all=codes.length>1?await xdMergeDocx(blobs):blobs[0];zip.file('Tat_ca_ma_de.docx',all);
   const title=(subj.name?'Môn '+subj.name:XDS.name);const kr=xdKeyRows(X,title,codes,plans);
   const wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(kr.rows);ws['!cols']=[{wch:8},{wch:9},...codes.map(()=>({wch:8}))];XLSX.utils.book_append_sheet(wb,ws,'Bảng đáp án');
   const ws2=XLSX.utils.aoa_to_sheet(kr.map);ws2['!cols']=[{wch:8},{wch:36},{wch:6},{wch:9},{wch:13}];XLSX.utils.book_append_sheet(wb,ws2,'Đối chiếu câu');
@@ -2616,9 +2657,10 @@ async function xdGenerate(subj){
   const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
   XDS.done={codes,rows:kr.rows,tpl,title};
   const miss=X.parts.filter(P=>P.kind<4).reduce((s,P)=>s+P.qs.filter(q=>!q.key).length,0);
-  out.innerHTML=`<div class="card"><div class="okbox">Đã tạo ${codes.length} mã đề: <b>${codes.join(', ')}</b>, kèm file đáp án Excel (Dap_an.xlsx) trong cùng file .zip.</div>
+  out.innerHTML=`<div class="card"><div class="okbox">Đã tạo ${codes.length} mã đề: <b>${codes.join(', ')}</b>, kèm file gộp tất cả mã đề (Tat_ca_ma_de.docx) và file đáp án Excel (Dap_an.xlsx) trong cùng file .zip.</div>
    ${miss?`<div class="warnbox">Còn ${miss} câu chưa có đáp án nên bảng đáp án để trống các câu đó.</div>`:''}
-   <button class="btn pri" id="xdExam">${ICON.cam} Tạo bài kiểm tra để chấm với đáp án này</button><button class="btn" id="xdSave">Tải lại file .zip</button></div>`;
+   <button class="btn pri" id="xdExam">${ICON.cam} Tạo bài kiểm tra để chấm với đáp án này</button><button class="btn" id="xdAll">${ICON.exp} Tải 1 file Word gộp ${codes.length} mã đề (in một lần)</button><button class="btn" id="xdSave">Tải lại file .zip</button></div>`;
+  const base=asciiName('Tat_ca_ma_de_'+(subj.name||XDS.name));$('#xdAll').onclick=()=>saveFile(base+'.docx',all);
   const fname=asciiName('Xao_de_'+(subj.name||XDS.name))+'.zip';$('#xdSave').onclick=()=>saveFile(fname,blob);$('#xdExam').onclick=xdToExam;
   XDS.lastZip=blob;await saveFile(fname,blob);
  }catch(err){out.innerHTML=`<div class="warnbox">Không tạo được đề: ${esc(err.message)}</div>`;console.error(err);}
