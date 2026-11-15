@@ -1645,7 +1645,7 @@ function showKeyQR(e){
 /* ---------- Mã QR tra điểm cho học sinh ---------- */
 function appBase(){try{const v=localStorage.getItem('ct_base');if(v)return v;}catch(e){}
  if(/^https?:$/.test(location.protocol)&&!/claude\.(ai|site|com)|claudeusercontent|androidplatform\.net|localhost/.test(location.hostname))return location.origin+location.pathname;return DEFAULT_BASE;}
-const BUILD='15/11/2026 16:25';
+const BUILD='15/11/2026 16:46';
 const DEFAULT_BASE='https://hatthi32.github.io/CHAMTHI-TN/';
 const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const unb64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
@@ -2244,12 +2244,34 @@ function xdHeaderXml(I,code,{noTable=false}={}){
  const cell=(w,inner,border)=>`<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${border?'<w:tcBorders><w:top w:val="single" w:sz="8"/><w:left w:val="single" w:sz="8"/><w:bottom w:val="single" w:sz="8"/><w:right w:val="single" w:sz="8"/></w:tcBorders>':''}<w:vAlign w:val="center"/></w:tcPr>${inner}</w:tc>`;
  const tbl=(ws,cells)=>`<w:tbl><w:tblPr><w:tblW w:w="${STD.tw}" w:type="dxa"/><w:tblBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/><w:insideH w:val="nil"/><w:insideV w:val="nil"/></w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="40" w:type="dxa"/><w:right w:w="40" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${ws.map(w=>`<w:gridCol w:w="${w}"/>`).join('')}</w:tblGrid><w:tr>${cells}</w:tr></w:tbl>`;
  const w1=Math.round(STD.tw*0.42),w2=STD.tw-w1;
- let x=tbl([w1,w2],cell(w1,left)+cell(w2,right));
+ let x='<w:bookmarkStart w:id="9990" w:name="_xdHead"/>'+tbl([w1,w2],cell(w1,left)+cell(w2,right));
  x+=wp('',{before:0});
  const wa=STD.tw-1900-200,wb2=200,wc=1900;
  x+=tbl([wa,wb2,wc],cell(wa,wp(wr('Họ, tên thí sinh: ........................................................',{b:false})+'',{before:60})+wp(wr('Số báo danh: .............................................................'),{before:60}))+cell(wb2,wp(''))+cell(wc,wp(wr('Mã đề '+code,{b:true,sz:26}),{jc:'center',before:40,after:40}),true));
- x+=wp('',{before:0});
+ x+=wp('',{before:0})+'<w:bookmarkEnd w:id="9990"/>';
  return x;}
+/* Đưa khối tiêu đề (trường, "Đề có … trang", mã đề) vào phần đầu trang của TRANG ĐẦU (header "first").
+   Word chỉ tự cập nhật số trang trong header/footer, còn trong thân bài thì giữ số cũ ("Đề có 1 trang").
+   Phiếu cỡ cả trang A4 (đặt trước tiêu đề) được tách thành section riêng ở trước. */
+async function xdTitleToHeader(zip){
+ let x=await zip.file('word/document.xml').async('string');
+ const a=x.indexOf('<w:bookmarkStart w:id="9990" w:name="_xdHead"/>'),bEnd='<w:bookmarkEnd w:id="9990"/>',b=x.indexOf(bEnd);if(a<0||b<0)return;
+ const head=x.slice(a+'<w:bookmarkStart w:id="9990" w:name="_xdHead"/>'.length,b);let pre=x.slice(0,a),post=x.slice(b+bEnd.length);
+ const si=post.lastIndexOf('<w:sectPr');let sect=post.slice(si,post.indexOf('</w:sectPr>',si)+11);
+ const bare=sect.replace(/<w:(?:header|footer)Reference\b[^>]*\/>|<w:titlePg\/>|<w:type\b[^>]*\/>/g,'').replace(/(<w:sectPr\b[^>]*>)/,'$1<w:footerReference w:type="default" r:id="rIdXdFtr"/>');
+ // phiếu cả trang ở trước tiêu đề: thay ngắt trang bằng ngắt section
+ const pb=/<w:p>(?:<w:pPr>(?:(?!<\/w:pPr>)[\s\S])*<\/w:pPr>)?<w:r><w:br w:type="page"\/><\/w:r><\/w:p>\s*$/;
+ if(pb.test(pre))pre=pre.replace(pb,`<w:p><w:pPr><w:spacing w:before="0" w:after="0"/>${bare}</w:pPr></w:p>`);
+ let ns=sect.replace(/(<w:sectPr\b[^>]*>)/,'$1<w:headerReference w:type="first" r:id="rIdXdHdr"/><w:footerReference w:type="first" r:id="rIdXdFtr"/>');
+ ns=/<w:docGrid\b/.test(ns)?ns.replace(/(<w:docGrid\b)/,'<w:titlePg/>$1'):ns.replace('</w:sectPr>','<w:titlePg/></w:sectPr>');
+ post=post.replace(sect,ns);
+ zip.file('word/document.xml',pre+post);
+ const root=x.match(/<w:document\b[^>]*>/)[0].replace('<w:document','<w:hdr');
+ zip.file('word/header_xd.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+root+head+'</w:hdr>');
+ let rels=await zip.file('word/_rels/document.xml.rels').async('string');
+ rels=rels.replace('</Relationships>','<Relationship Id="rIdXdHdr" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header_xd.xml"/></Relationships>');zip.file('word/_rels/document.xml.rels',rels);
+ let ct=await zip.file('[Content_Types].xml').async('string');
+ ct=ct.replace('</Types>','<Override PartName="/word/header_xd.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/></Types>');zip.file('[Content_Types].xml',ct);}
 function xdFooterXml(code){return`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:ftr xmlns:w="${WNS}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:p><w:pPr><w:pBdr><w:top w:val="single" w:sz="4" w:space="1" w:color="auto"/></w:pBdr><w:jc w:val="center"/></w:pPr>${wr('Trang ',{i:true,sz:20})}${wfld('PAGE',20,false,true)}${wr('/',{i:true,sz:20})}${wfld('NUMPAGES',20,false,true)}${wr(' – Mã đề '+code,{i:true,sz:20})}</w:p></w:ftr>`;}
 const PART_STD={1:(n)=>['PHẦN I. ',`Câu trắc nghiệm nhiều phương án lựa chọn. Thí sinh trả lời từ câu 1 đến câu ${n}. Mỗi câu hỏi thí sinh chỉ chọn một phương án.`],
  2:(n)=>['PHẦN II. ',`Câu trắc nghiệm đúng sai. Thí sinh trả lời từ câu 1 đến câu ${n}. Trong mỗi ý a), b), c), d) ở mỗi câu, thí sinh chọn đúng hoặc sai.`],
@@ -2327,6 +2349,7 @@ async function xdBuildDocx(D,X,code,opt,sheet){
  if(!/Extension="png"/i.test(ct))ct=ct.replace(/(<Types[^>]*>)/,'$1<Default Extension="png" ContentType="image/png"/>');
  ct=ct.replace('</Types>','<Override PartName="/word/footer_xd.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/></Types>');zip.file('[Content_Types].xml',ct);
  if(sheet)zip.file('word/media/xd_phieu.png',sheet.png);
+ await xdTitleToHeader(zip);
  return{blob:await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',compression:'DEFLATE'}),plan};}
 // "Câu n." chuẩn: in đậm, giữ phần nội dung phía sau
 function stdLabel(doc,p,n){const t=pText(p),m=t.match(/^\s*C[âa]u\s*\d{1,3}\s*(\([^)]{0,30}\))?\s*[.:)]?\s*/i);if(!m)return p;
@@ -2527,6 +2550,7 @@ async function xdBuildPdfDocx(X,code,opt,sheet,meta={}){
  zip.file('_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
  zip.file('word/_rels/document.xml.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdXdFtr" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer_xd.xml"/>'+imgs.map((_,i)=>`<Relationship Id="rImg${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/h${i+1}.png"/>`).join('')+'</Relationships>');
  imgs.forEach((b,i)=>zip.file(`word/media/h${i+1}.png`,b));zip.file('word/document.xml',docXml);zip.file('word/footer_xd.xml',xdFooterXml(code));
+ await xdTitleToHeader(zip);
  return{blob:await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',compression:'DEFLATE'}),plan};}
 
 /* ---------- Gộp nhiều mã đề vào một file Word để in ----------
@@ -2538,7 +2562,7 @@ async function xdMergeDocx(blobs){
  const base=await JSZip.loadAsync(blobs[0]);
  let ct=await base.file('[Content_Types].xml').async('string');let rels=await base.file('word/_rels/document.xml.rels').async('string');
  const docs=[];for(const b of blobs)docs.push(b===blobs[0]?base:await JSZip.loadAsync(b));
- const bodies=[];let head='';
+ const bodies=[],twoSec=[];let head='';
  for(let i=0;i<docs.length;i++){const z=docs[i];let x=await z.file('word/document.xml').async('string');
   if(!i)head=x.slice(0,x.indexOf('<w:body>')+8);
   let body=x.slice(x.indexOf('<w:body>')+8,x.lastIndexOf('</w:body>'));
@@ -2557,12 +2581,26 @@ async function xdMergeDocx(blobs){
    const fix=s=>s.replace(/(r:(?:id|embed|link|pict|dm|lo|qs|cs)|o:relid)="([^"]+)"/g,(m,a,v)=>map[v]?`${a}="${map[v]}"`:m);
    body=fix(body);sect=fix(sect);
    body=body.replace(/(<w:bookmark(?:Start|End)\b[^>]*?w:id=")(\d+)"/g,(m,a,v)=>a+(+v+i*100000)+'"');}
-  sect=sect.replace(/<w:pgNumType\b[^>]*\/>/g,'').replace(/(<w:sectPr\b[^>]*>)/,'$1');sect=/<w:cols\b/.test(sect)?sect.replace(/(<w:cols\b)/,'<w:pgNumType w:start="1"/>$1'):sect.replace(/(<w:docGrid\b|<\/w:sectPr>)/,'<w:pgNumType w:start="1"/>$1');
-  if(i)sect=sect.replace(/<w:type\b[^>]*\/>/g,'').replace(/(<w:sectPr\b[^>]*>(?:<w:(?:header|footer)Reference\b[^>]*\/>)*)/,'$1<w:type w:val="oddPage"/>');
+  // section đầu tiên của mỗi mã đề: đánh lại số trang từ 1, bắt đầu ở trang lẻ (mã thứ 2 trở đi)
+  const startSect=t=>{t=t.replace(/<w:pgNumType\b[^>]*\/>/g,'');t=/<w:cols\b/.test(t)?t.replace(/(<w:cols\b)/,'<w:pgNumType w:start="1"/>$1'):t.replace(/(<w:docGrid\b|<w:titlePg\/>|<\/w:sectPr>)/,'<w:pgNumType w:start="1"/>$1');
+   if(i)t=t.replace(/<w:type\b[^>]*\/>/g,'').replace(/(<w:sectPr\b[^>]*>(?:<w:(?:header|footer)Reference\b[^>]*\/>)*)/,'$1<w:type w:val="oddPage"/>');return t;};
+  const inner=body.match(/<w:sectPr\b[\s\S]*?<\/w:sectPr>/);twoSec.push(!!inner);
+  // có phiếu cả trang tách riêng: trang phiếu không đánh số (chân trang trống), phần đề đánh số lại từ 1
+  if(inner){body=body.replace(inner[0],startSect(inner[0]).replace(/<w:footerReference w:type="default" r:id="[^"]*"\/>/,'<w:footerReference w:type="default" r:id="rIdXdBlank"/>'));
+   sect=sect.replace(/<w:pgNumType\b[^>]*\/>/g,'');sect=/<w:cols\b/.test(sect)?sect.replace(/(<w:cols\b)/,'<w:pgNumType w:start="1"/>$1'):sect.replace(/(<w:docGrid\b|<w:titlePg\/>|<\/w:sectPr>)/,'<w:pgNumType w:start="1"/>$1');}
+  else sect=startSect(sect);
   bodies.push({body,sect});}
  let out='';bodies.forEach((b,i)=>{out+=b.body+(i<bodies.length-1?`<w:p><w:pPr>${b.sect}</w:pPr></w:p>`:b.sect);});
  out=out.replace(/\s+w14:(?:paraId|textId)="[^"]*"/g,'');let n=0;out=out.replace(/(<wp:docPr\b[^>]*?\bid=")\d+"/g,(m,a)=>a+(++n)+'"');
  base.file('word/document.xml',head+out+'</w:body></w:document>');base.file('word/_rels/document.xml.rels',rels);base.file('[Content_Types].xml',ct);
+ // "Đề có … trang" ở đầu trang: đếm số trang của riêng mã đề (section phần đề)
+ if(twoSec.some(Boolean)){base.file('word/footer_blank.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:ftr xmlns:w="'+WNS+'"><w:p/></w:ftr>');
+  rels=rels.replace('</Relationships>','<Relationship Id="rIdXdBlank" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer_blank.xml"/></Relationships>');base.file('word/_rels/document.xml.rels',rels);
+  ct=ct.replace('</Types>','<Override PartName="/word/footer_blank.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/></Types>');base.file('[Content_Types].xml',ct);}
+
+ for(let i=0;i<docs.length;i++){const f=i?`word/m${i}_header_xd.xml`:'word/header_xd.xml';const hf=base.file(f);if(!hf)continue;let h=await hf.async('string');
+  h=h.replace(/ NUMPAGES /g,' SECTIONPAGES ');
+  base.file(f,h);}
  for(const f of Object.keys(base.files).filter(f=>/^word\/(?:m\d+_)?footer[^/]*\.xml$/.test(f))){const s=await base.file(f).async('string');base.file(f,s.replace(/<w:r>(?:(?!<w:r>)[\s\S])*?<w:t[^>]*>\/<\/w:t><\/w:r><w:fldSimple w:instr=" NUMPAGES ">[\s\S]*?<\/w:fldSimple>/g,''));}
  return base.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',compression:'DEFLATE'});}
 
