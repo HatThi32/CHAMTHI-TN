@@ -157,6 +157,7 @@ input.in:focus,select.in:focus,textarea.in:focus{outline:2px solid var(--accent)
 .hub{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;width:100%;padding:20px 18px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow);text-align:left;cursor:pointer;color:inherit}
 .hub .ic{width:54px;height:54px;border-radius:14px;display:grid;place-items:center;background:var(--accent);color:#fff}.hub .ic svg{width:28px;height:28px}
 .hub b{display:block;font-size:21px;font-weight:800}.hub .tx span{display:block;font-size:15px;color:var(--muted);margin-top:2px}.hub .chev{color:var(--line2)}
+.hubs{display:grid;gap:18px;margin-bottom:6px}@media(min-width:760px){.hubs{grid-template-columns:1fr 1fr}}.hubc{display:flex;flex-direction:column;gap:10px;min-width:0}.hubc .hub{flex:1}
 .hubgo{min-height:60px;font-size:17.5px;display:flex;align-items:center;justify-content:center;gap:10px}.hubgo span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hubgo svg{flex:none;width:22px;height:22px}
 .sheetimg{width:100%;height:auto;border-radius:10px;border:1px solid var(--line);background:#fff;display:block}
 .kp{display:flex;flex-direction:column;gap:6px}
@@ -746,6 +747,7 @@ const fmt2=n=>r2(n).toFixed(2);
 const nowStr=()=>{const d=new Date(),p=x=>String(x).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`};
 const safeName=s=>String(s||'').normalize('NFC').replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,' ').trim().slice(0,80)||'khong-ten';
 const ICON={
+ shuf:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>',
  list:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
  sheet:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 2h9l4 4v16H6z"/><circle cx="10" cy="11" r="1.6"/><circle cx="14.5" cy="11" r="1.6"/><circle cx="10" cy="16" r="1.6"/><circle cx="14.5" cy="16" r="1.6" fill="currentColor"/></svg>',
  class:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c.6-3.4 3-5 6-5s5.4 1.6 6 5"/><circle cx="17" cy="9" r="2.4"/><path d="M16.5 14.2c2.4.2 4 1.7 4.5 4.3"/></svg>',
@@ -1280,10 +1282,13 @@ V.home=async()=>{
  let nb=0;for(const e of S.exams)nb+=(await DB.byExam(e.id)).length;
  return{title:'ChamthiQM',html:`
  ${DB.mem?'<div class="warnbox">Trình duyệt này không cho lưu dữ liệu lâu dài. Bài chấm chỉ giữ đến khi đóng trang, hãy xuất kết quả trước khi thoát.</div>':''}
- <button class="hub" data-go="exams"><span class="ic">${ICON.list}</span><span class="tx"><b>Danh sách chấm</b><span>${S.exams.length?`${S.exams.length} bài kiểm tra · ${nb} bài đã chấm`:'Chưa có bài kiểm tra nào · bấm để tạo'}</span></span><span class="chev">${ICON.chev}</span></button>
- <button class="btn pri hubgo" id="hNew">${ICON.plus}<span>Tạo bài kiểm tra mới</span></button>
+ <div class="hubs">
+ <div class="hubc"><button class="hub" data-go="exams"><span class="ic">${ICON.list}</span><span class="tx"><b>Chấm thi</b><span>${S.exams.length?`${S.exams.length} bài kiểm tra · ${nb} bài đã chấm`:'Quét phiếu bằng camera, tính điểm ngay'}</span></span><span class="chev">${ICON.chev}</span></button>
+ <button class="btn pri hubgo" id="hNew">${ICON.plus}<span>Tạo bài kiểm tra mới</span></button></div>
+ <div class="hubc"><button class="hub" data-go="shuffle"><span class="ic">${ICON.shuf}</span><span class="tx"><b>Xáo đề thi</b><span>Đề Word/PDF → nhiều mã đề, chèn phiếu, xuất đáp án</span></span><span class="chev">${ICON.chev}</span></button>
+ <button class="btn pri hubgo" data-go="shuffle">${ICON.shuf}<span>Xáo đề mới</span></button></div>
+ </div>
  <div class="menu">
- ${mi('edit','Xáo đề thi','Từ đề Word/PDF: xáo mã đề, chèn phiếu, xuất đáp án','shuffle')}
  ${mi('sheet','Tải phiếu trả lời','Phiếu mẫu để in cho học sinh','sheets')}
  ${mi('class','Lớp học',S.classes.length?S.classes.length+' lớp':'Danh sách học sinh theo SBD','classes')}
  ${mi('gear','Cài đặt & sao lưu','Độ nhạy, sao lưu dữ liệu','settings')}
@@ -1645,7 +1650,7 @@ function showKeyQR(e){
 /* ---------- Mã QR tra điểm cho học sinh ---------- */
 function appBase(){try{const v=localStorage.getItem('ct_base');if(v)return v;}catch(e){}
  if(/^https?:$/.test(location.protocol)&&!/claude\.(ai|site|com)|claudeusercontent|androidplatform\.net|localhost/.test(location.hostname))return location.origin+location.pathname;return DEFAULT_BASE;}
-const BUILD='15/11/2026 16:46';
+const BUILD='15/11/2026 17:00';
 const DEFAULT_BASE='https://hatthi32.github.io/CHAMTHI-TN/';
 const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const unb64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
