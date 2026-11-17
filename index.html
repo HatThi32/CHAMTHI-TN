@@ -1274,6 +1274,8 @@ function issuesOf(ex,res,all){
 }
 
 /* ================= LƯU TRỮ (IndexedDB trong máy) ================= */
+// xin trình duyệt giữ dữ liệu cố định (không tự xóa khi máy thiếu bộ nhớ hoặc lâu không mở)
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persisted().then(p=>p||navigator.storage.persist()).catch(()=>{});}catch(e){}
 const DB={db:null,mem:null,
  open(){return new Promise(res=>{try{const rq=indexedDB.open('chamthi',1);
   rq.onupgradeneeded=()=>{const d=rq.result;d.createObjectStore('exams',{keyPath:'id'});const r=d.createObjectStore('results',{keyPath:'id'});r.createIndex('exam','examId');d.createObjectStore('classes',{keyPath:'id'});d.createObjectStore('images',{keyPath:'id'});d.createObjectStore('meta',{keyPath:'k'});};
@@ -1769,7 +1771,7 @@ function showKeyQR(e){
 /* ---------- Mã QR tra điểm cho học sinh ---------- */
 function appBase(){try{const v=localStorage.getItem('ct_base');if(v)return v;}catch(e){}
  if(/^https?:$/.test(location.protocol)&&!/claude\.(ai|site|com)|claudeusercontent|androidplatform\.net|localhost/.test(location.hostname))return location.origin+location.pathname;return DEFAULT_BASE;}
-const BUILD='17/11/2026 17:23';
+const BUILD='17/11/2026 17:55';
 const DEFAULT_BASE='https://hatthi32.github.io/CHAMTHI-TN/';
 const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const unb64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
@@ -3152,10 +3154,16 @@ V.settings=async()=>({title:'Cài đặt & sao lưu',html:`
  <div class="card"><h3>Độ nhạy nhận ô tô</h3><div class="note">Mức thấp hơn nhận cả ô tô nhạt (bút chì mờ). Mức cao hơn bỏ qua vết bẩn, dấu tẩy. Mặc định 35.</div>
  <div class="row"><input type="range" id="tR" min="20" max="60" step="1" value="${Math.round(settingT()*100)}" class="grow" style="accent-color:var(--accent)"><b class="num" id="tV" style="width:32px">${Math.round(settingT()*100)}</b></div>
  <div class="note">Thay đổi này áp dụng cho các bài quét sau.</div></div>
+ <div class="card"><h3>Bộ nhớ</h3><div class="note num" id="stInfo">Đang tính…</div></div>
  <div class="card"><h3>Phiên bản</h3><div class="note num">ChamthiQM · bản web ${BUILD}${window.AndroidBridge?' · trong app Android':''}</div></div>
  <div class="card"><h3>Sao lưu dữ liệu</h3><div class="note">Dữ liệu (bài kiểm tra, đáp án, lớp, ảnh bài làm) lưu trong bộ nhớ của trình duyệt trên máy này. Xóa dữ liệu trình duyệt sẽ mất hết, nên hãy sao lưu định kỳ hoặc sau mỗi đợt chấm.</div>
  <div class="row"><button class="btn pri grow" id="bk">${ICON.exp} Tải bản sao lưu</button><label class="btn grow" for="fBak" id="rs" role="button">Khôi phục từ bản sao lưu</label></div><div class="note" id="bkP"></div></div>`,
  after(){
+  (async()=>{try{const est=navigator.storage&&navigator.storage.estimate?await navigator.storage.estimate():null;const n=(await DB.all('results')).length,pers=navigator.storage&&navigator.storage.persisted?await navigator.storage.persisted():false;
+   const MB=x=>(x/1048576).toFixed(x<1048576*10?1:0).replace('.',',');const el=$('#stInfo');if(!el)return;
+   if(est&&est.quota){const per=n?est.usage/n:300*1024,left=Math.max(0,est.quota-est.usage);el.innerHTML=`Đã lưu <b>${n}</b> bài chấm, dùng ${MB(est.usage)} MB. Bộ nhớ còn cho phép khoảng ${MB(left)} MB, tương đương <b>${Math.floor(left/per).toLocaleString('vi-VN')}</b> bài nữa.${pers?' Dữ liệu được giữ cố định, trình duyệt không tự xóa.':''}`;}
+   else el.textContent=`Đã lưu ${n} bài chấm.`;}catch(x){}})();
+
   $('#tR').oninput=ev=>{$('#tV').textContent=ev.target.value;try{localStorage.setItem('ct_T',String(ev.target.value/100))}catch(e){}};
   $('#bk').onclick=async()=>{$('#bkP').textContent='Đang gom dữ liệu…';const imgs=await DB.all('images'),out={app:'chamthi',v:1,exams:await DB.all('exams'),classes:await DB.all('classes'),results:await DB.all('results'),images:{}};
    for(const im of imgs){out.images[im.id]=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(im.blob);});}
