@@ -1993,7 +1993,8 @@ function liveGuide(W,H,F,sw,sh){const mkW=F.MK[1][0]-F.MK[0][0],mkH=F.MK[3][1]-F
 function liveQuad(cands,GD){
  const [p0,,p2]=[GD.pts[0],GD.pts[1],GD.pts[2]],gx=p0[0],gy=p0[1],gw=GD.gw,gh=GD.gh,ex=0.36;
  // phiếu dẹt (1/3 trang) xoay nghiêng thì góc lệch xa theo chiều ngắn: nới vùng tìm theo cạnh dài
- const mx=Math.max(gw,gh)*ex;const C=cands.filter(c=>{const side=Math.sqrt(c.a);return side>=GD.mk*0.66&&side<=GD.mk*2.6&&c.x>gx-mx&&c.x<gx+gw+mx&&c.y>gy-mx&&c.y<gy+gh+mx;});
+ // phiếu to hơn khung ngắm (giữ máy gần, màn hình ngang) vẫn nhận: tìm trên cả khung hình, chỉ lọc theo cỡ ô
+ const mx=Math.max(gw,gh)*1.2;const C=cands.filter(c=>{const side=Math.sqrt(c.a);return side>=GD.mk*0.6&&side<=GD.mk*3.4&&c.x>gx-mx&&c.x<gx+gw+mx&&c.y>gy-mx&&c.y<gy+gh+mx;});
  if(C.length<4)return null;
  const cxm=gx+gw/2,cym=gy+gh/2,pick=(sx,sy)=>{let b=null,bv=-1e9;for(const c of C){const v=(c.x-cxm)*sx/gw+(c.y-cym)*sy/gh+Math.sqrt(c.a)/GD.mk*0.08;if(v>bv){bv=v;b=c;}}return b;};
  const q=[pick(-1,-1),pick(1,-1),pick(1,1),pick(-1,1)];if(new Set(q).size<4)return null;
@@ -2001,8 +2002,9 @@ function liveQuad(cands,GD){
  let sg=0;for(let i=0;i<4;i++){const a=q[i],b=q[(i+1)%4],c=q[(i+2)%4],cr=(b.x-a.x)*(c.y-b.y)-(b.y-a.y)*(c.x-b.x);if(Math.abs(cr)<1)return null;if(sg&&Math.sign(cr)!==sg)return null;sg=Math.sign(cr);}
  const d=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),top=d(q[0],q[1]),bot=d(q[3],q[2]),lef=d(q[0],q[3]),rig=d(q[1],q[2]);
  if(Math.max(top,bot)/Math.min(top,bot)>1.35||Math.max(lef,rig)/Math.min(lef,rig)>1.35)return null;
- const r=((top+bot)/2)/((lef+rig)/2),rg=gw/gh;if(r/rg<0.8||r/rg>1.25)return null;   // đúng tỉ lệ mẫu phiếu (chống nhận nhầm)
- let ar=0;for(let i=0;i<4;i++){const a=q[i],b=q[(i+1)%4];ar+=a.x*b.y-b.x*a.y;}ar=Math.abs(ar)/2;if(ar<gw*gh*0.22)return null;   // phiếu nhỏ hơn khung vẫn nhận (giữ máy xa hơn)
+ // đúng tỉ lệ một trong các mẫu phiếu của bài này (mẫu mới hoặc mẫu cũ, phiếu đặt dọc hay ngang) – chống nhận nhầm
+ const r=((top+bot)/2)/((lef+rig)/2),rs=(GD.ratios||[gw/gh]).flatMap(a=>[a,1/a]);if(!rs.some(a=>r/a>=0.8&&r/a<=1.25))return null;
+ let ar=0;for(let i=0;i<4;i++){const a=q[i],b=q[(i+1)%4];ar+=a.x*b.y-b.x*a.y;}ar=Math.abs(ar)/2;if(ar<gw*gh*0.15)return null;   // phiếu nhỏ hơn khung vẫn nhận (giữ máy xa hơn)
  return q;
 }
 function liveHits(cands,GD){const used=new Set();return GD.pts.map(p=>{let best=null;for(const c of cands){if(used.has(c))continue;const side=Math.sqrt(c.a);if(side<GD.mk*0.66||side>GD.mk*2.6)continue;
@@ -2073,7 +2075,9 @@ async function startLive(e){
   stable=0;busy=false;};
  // Khung ngắm kiểu QM: 4 khung xanh lớn ở 4 góc, mỗi khung tự tìm ô vuông đen nằm trong nó
  const F=lay(exLayKey(e)).F,mkW=F.MK[1][0]-F.MK[0][0],mkH=F.MK[3][1]-F.MK[0][1];
- const guide=(W,H)=>liveGuide(W,H,F,ov.clientWidth||W,ov.clientHeight||H);
+ // mọi khổ phiếu có thể của bài này (học sinh có thể làm trên phiếu in theo mẫu cũ hoặc mẫu mới)
+ const ratios=[...new Set(Object.values(LAYS).filter(D=>D.tpl===e.tpl).map(D=>{const G=fmtOf(D.t);return +((G.MK[1][0]-G.MK[0][0])/(G.MK[3][1]-G.MK[0][1])).toFixed(3);}))];
+ const guide=(W,H)=>{const g=liveGuide(W,H,F,ov.clientWidth||W,ov.clientHeight||H);g.ratios=ratios;return g;};
  const drawGuide=(g,hit)=>{cx.save();
   // khung camera được phóng to ra màn hình: quy độ dày nét về khoảng 2 px màn hình cho mảnh, gọn
   const sc=Math.max((ov.clientWidth||cv.width)/cv.width,(ov.clientHeight||cv.height)/cv.height)||1;
