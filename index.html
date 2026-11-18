@@ -964,16 +964,83 @@ function buildSheet2(t){
  if(full){txt(12,y+2,'Tô kín một ô bằng bút chì đen hoặc bút mực đen/xanh đậm; không gạch xóa, không làm bẩn các ô vuông đen. Phần III: tô từ cột trái, mỗi cột một ký tự.',6.3,false,'left',0.35);}
  L.ops=ops;return L;
 }
-// Sổ bố cục: khóa = mã bài kiểm tra (mẫu mới) | '1:…' mẫu cũ | '0:…' mẫu cũ trước 12/11/2026
+/* ===== Mẫu phiếu bản 3 (18/11/2026): ô tròn để trống hoàn toàn (nền trắng); chữ A B C D / Đ S in rõ trên đầu từng cột,
+   chữ số 0–9 và dấu −, , in ở cột nhãn bên trái. Cùng khổ giấy với bản 2 nhưng mã mẫu khác để app phân biệt. ===== */
+const CODE3={toan:3,khtn:4,tx:5,xh:1,nn:2,tong:1};
+function buildSheet3(t){
+ const F=fmtOf(t),full=F.H>200,ops=[],L={t,F,rb:RB2,made:[],sbd:[],p1:[],p2:[],p3:[],blocks:[],blk:[],madeW:[]};
+ const box=(x,y,w,h,lw=0.25)=>ops.push({k:'box',x,y,w,h,lw});
+ const band=(x,y,w,h)=>ops.push({k:'band',x,y,w,h});
+ const txt=(x,y,s,size=8,bold=false,align='left',gray=0)=>ops.push({k:'txt',x,y,s,size,bold,align,gray});
+ const sq=(x,y,s)=>ops.push({k:'sq',x,y,s});
+ const line=(x1,y1,x2,y2,lw=0.15)=>ops.push({k:'line',x1,y1,x2,y2,lw});
+ const dots=(x1,x2,y)=>ops.push({k:'dots',x1,x2,y});
+ let blk=-1;const newBlk=(kind,a,b)=>{L.blocks.push([]);L.blk.push({kind,a,b});return ++blk};
+ // ô tròn trống: lab chỉ dùng để nhóm khi tính nền, KHÔNG in vào ô
+ const bub=(x,y,lab,kind,qi)=>{const b={x,y,b:blk,kind,qi,lab};ops.push({k:'bub',x,y,r:RB2});L.blocks[blk].push(b);return b};
+ const hd=(x,y,s,sz=7.4)=>txt(x,y,s,sz,true,'center');
+ F.MK.forEach(([x,y])=>sq(x,y,F.mks));
+ const bits=[1,(t.code>>2)&1,(t.code>>1)&1,t.code&1],cd=F.cds;
+ F.CODE.forEach(([x,y],i)=>{if(bits[i])sq(x,y,cd);else box(x-cd/2,y-cd/2,cd,cd,0.12);});
+ const ty=F.MK[0][1];
+ txt(22,ty,'PHIẾU TRẢ LỜI TRẮC NGHIỆM',full?12:10,true,'left');
+ txt(188,ty,`Mẫu ${t.no||t.code} · ${t.short}`,6.5,false,'right',0.4);
+ let y=ty+4;
+ if(full){box(12,y,186,13);txt(15,y+3.6,'Họ và tên:',8.5);dots(31,134,y+4.6);txt(138,y+3.6,'Lớp:',8.5);dots(146,195,y+4.6);
+  txt(15,y+9.8,'Môn:',8.5);dots(24,92,y+10.8);txt(97,y+9.8,'Ngày:',8.5);dots(107,144,y+10.8);txt(149,y+9.8,'Điểm:',8.5);dots(159,195,y+10.8);y+=15;}
+ else{box(12,y,186,7);txt(15,y+3.6,'Họ và tên:',8.5);dots(31,120,y+4.6);txt(124,y+3.6,'Lớp:',8.5);dots(132,160,y+4.6);txt(164,y+3.6,'Điểm:',8.5);dots(174,195,y+4.6);y+=9;}
+ const head=(x,y,w,title)=>{band(x,y,w,5);box(x,y,w,5,0.25);txt(x+w/2,y+2.6,title,7.2,true,'center');};
+ const MC=4,LC=4.5,msW=2+LC+MC*PS+4+6*PS+2;
+ const p1H=nr=>12.25+(nr-1)*PS+Math.floor((nr-1)/5)*1.2+4;
+ const need={ms:()=>[msW,58],
+  p1:(n,nc)=>[nc*24+(nc+1)*3,p1H(Math.ceil(n/nc))],
+  p2:(n,nc)=>{const nr=Math.ceil(n/nc);return[nc*14+(nc+1)*3,6+nr*26+1];},
+  p3:n=>[5+n*18+(n+1)*2,73]};
+ const draw={
+  ms(x,y,w,h){const x0=x+(w-msW)/2,xl=x0+2,xm=xl+LC,xs=xm+MC*PS+4;box(x,y,w,h);
+   band(x,y,w,5);line(xs-2,y,xs-2,y+h,0.25);txt(xm+MC*PS/2,y+2.6,'MÃ ĐỀ',7.2,true,'center');txt(xs+3*PS,y+2.6,'SỐ BÁO DANH',7.2,true,'center');line(x,y+5,x+w,y+5,0.25);
+   const wy=y+6,fr=y+14.25;for(let d=0;d<10;d++)hd(xl+LC/2-0.3,fr+d*PS,String(d),7);
+   const col=(cx,arr,kind,qi)=>{box(cx-PS/2,wy,PS,5,0.2);const c=[];for(let d=0;d<10;d++)c.push(bub(cx,fr+d*PS,String(d),kind,qi));arr.push(c);};
+   newBlk('made');for(let j=0;j<MC;j++){const cx=xm+PS/2+j*PS;col(cx,L.made,'made',j);L.madeW.push({x:cx,y:wy+2.5});}
+   newBlk('sbd');for(let j=0;j<6;j++)col(xs+PS/2+j*PS,L.sbd,'sbd',j);},
+  p1(x,y,w,h,n,nc){box(x,y,w,h);head(x,y,w,'PHẦN I');const nr=Math.ceil(n/nc),gw=24,gap=(w-nc*gw)/(nc+1),off=Math.max(0,(h-p1H(nr))/2),fr=y+12.25+off;
+   for(let k=0;k<nc;k++){const gx=x+gap+k*(gw+gap);newBlk('p1',k*nr,Math.min(n,(k+1)*nr)-1);if(k)line(gx-gap/2,y+6,gx-gap/2,y+h-1);
+    for(let i=0;i<4;i++)hd(gx+6+PS/2+i*PS,fr-4.9,LETTERS[i]);
+    for(let r=0;r<nr;r++){const q=k*nr+r;if(q>=n)break;const yy=fr+r*PS+Math.floor(r/5)*1.2;txt(gx+4.6,yy,String(q+1),7.2,true,'right');
+     L.p1[q]=[0,1,2,3].map(i=>bub(gx+6+PS/2+i*PS,yy,LETTERS[i],'p1',q));}}},
+  p2(x,y,w,h,n,nc){box(x,y,w,h);head(x,y,w,'PHẦN II');const nr=Math.ceil(n/nc),cw=14,gap=(w-nc*cw)/(nc+1),y0=y+Math.max(0,(h-need.p2(n,nc)[1])/2);
+   for(let k=0;k<n;k++){const ci=k%nc,ri=Math.floor(k/nc),cx=x+gap+ci*(cw+gap),cy=y0+6+ri*26;newBlk('p2',k,k);
+    if(ci)line(cx-gap/2,cy,cx-gap/2,cy+25);if(ri&&!ci)line(x+1,cy-0.5,x+w-1,cy-0.5,0.1);
+    txt(cx+cw/2,cy+2.2,'Câu '+(k+1),7,true,'center');hd(cx+5+PS/2,cy+5.6,'Đ',7);hd(cx+5+PS*1.5,cy+5.6,'S',7);const q=[];
+    for(let r=0;r<4;r++){const yy=cy+10.25+r*PS;txt(cx+1.6,yy,'abcd'[r],7,true,'center');q.push([bub(cx+5+PS/2,yy,'Đ','p2',k),bub(cx+5+PS*1.5,yy,'S','p2',k)]);}
+    L.p2.push(q);}},
+  p3(x,y,w,h,n){box(x,y,w,h);head(x,y,w,'PHẦN III');const cw=18,lw=5,gap=(w-lw-n*cw)/(n+1),lab=['−',','].concat([...'0123456789']);
+   lab.forEach((lb,r)=>hd(x+1+lw/2,y+18.75+r*PS,lb,lb.length&&/[−,]/.test(lb)?8.5:7));
+   for(let k=0;k<n;k++){const cx=x+lw+gap+k*(cw+gap);newBlk('p3',k,k);line(cx-gap/2,y+6,cx-gap/2,y+h-1);
+    txt(cx+cw/2,y+8.2,'Câu '+(k+1),7,true,'center');for(let j=0;j<4;j++)box(cx+j*PS,y+10.5,PS,5,0.2);
+    const q={minus:null,comma:[null,null,null,null],digits:[[],[],[],[]]};
+    lab.forEach((lb,r)=>{const yy=y+18.75+r*PS;for(let j=0;j<4;j++){const bx=cx+PS/2+j*PS;
+     if(r===0){if(j===0)q.minus=bub(bx,yy,lb,'p3',k);}else if(r===1){if(j===1||j===2)q.comma[j]=bub(bx,yy,lb,'p3',k);}else q.digits[j].push(bub(bx,yy,lb,'p3',k));}});
+    L.p3.push(q);}}};
+ for(const row of SHEET2[t.id]){
+  const ws=row.map(([k,...a])=>need[k](...a)[0]),hs=row.map(([k,...a])=>need[k](...a)[1]),gapX=2,extra=186-gapX*(row.length-1)-ws.reduce((a,b)=>a+b,0),rh=Math.max(...hs);
+  const grow=row.map(([k])=>k==='ms'?0:1),gs=grow.reduce((a,b)=>a+b,0)||1;let x=12;
+  row.forEach(([k,...a],i)=>{const w=ws[i]+extra*grow[i]/gs;draw[k](x,y,w,rh,...a);x+=w+gapX;});y+=rh+2;}
+ if(full){txt(12,y+2,'Tô kín một ô bằng bút chì đen hoặc bút mực đen/xanh đậm; không gạch xóa, không làm bẩn các ô vuông đen. Phần III: tô từ cột trái, mỗi cột một ký tự.',6.3,false,'left',0.35);}
+ L.ops=ops;return L;
+}
+// Sổ bố cục: '3:…' mẫu hiện tại (ô trống) | '2:…' mẫu 15/11/2026 (chữ mờ trong ô) | '1:…' mẫu cũ | '0:…' mẫu cũ trước 12/11/2026
+// lay('toan') = mẫu hiện tại để in, làm khung ngắm, chèn vào đề
 const LAYS={};
-for(const id of TPL_IDS){LAYS[id]={tpl:id,t:TPLS[id]};if(TPLS1[id])LAYS['1:'+id]={tpl:id,t:TPLS1[id]};}
+for(const id of TPL_IDS){if(SHEET2[id]){LAYS['3:'+id]={tpl:id,v:3,t:{...TPLS[id],code:CODE3[id],no:TPLS[id].code}};LAYS['2:'+id]={tpl:id,v:2,t:TPLS[id]};}else LAYS[id]={tpl:id,t:TPLS[id]};if(TPLS1[id])LAYS['1:'+id]={tpl:id,t:TPLS1[id]};}
 LAYS['0:toan']={tpl:'toan',t:{...TPLS1.toan,legacy:true}};LAYS['0:khtn']={tpl:'khtn',t:{...TPLS1.khtn,legacy:true}};
 LAYS['1:toan'].alt='0:toan';LAYS['1:khtn'].alt='0:khtn';
-const LAY={};const lay=k=>LAY[k]||(LAY[k]=(()=>{const D=LAYS[k],t=D.t;return t.fmt==='qm'?buildQM(t):SHEET2[k]?buildSheet2(t):buildSheet(t);})());
-// Bố cục của một bài đã chấm (bài chấm trước khi có mẫu mới không lưu khóa: là mẫu cũ)
-const resLayKey=(ex,res)=>res&&res.lk&&LAYS[res.lk]?res.lk:ex.tpl==='qm'?'qm':res&&res.lv&&LAYS['0:'+ex.tpl]?'0:'+ex.tpl:LAYS['1:'+ex.tpl]?'1:'+ex.tpl:ex.tpl;
-// Bố cục phiếu giáo viên đang dùng cho bài kiểm tra (khung ngắm khi quét): bài tạo trước khi có mẫu mới dùng mẫu cũ
-const exLayKey=ex=>ex.sheetV===2||!LAYS['1:'+ex.tpl]?ex.tpl:'1:'+ex.tpl;
+const layKey=k=>LAYS[k]?k:LAYS['3:'+k]?'3:'+k:k;
+const LAY={};const lay=k=>{k=layKey(k);return LAY[k]||(LAY[k]=(()=>{const D=LAYS[k],t=D.t;return t.fmt==='qm'?buildQM(t):D.v===3?buildSheet3(t):D.v===2?buildSheet2(t):buildSheet(t);})());};
+// Bố cục của một bài đã chấm. Bài chấm 15–18/11/2026 lưu khóa là tên mẫu (vd 'toan') = mẫu bản 2; bài chấm trước nữa không lưu khóa = mẫu cũ
+const resLayKey=(ex,res)=>{const k=res&&res.lk;if(k&&LAYS[k])return k;if(k&&LAYS['2:'+k])return '2:'+k;return ex.tpl==='qm'?'qm':res&&res.lv&&LAYS['0:'+ex.tpl]?'0:'+ex.tpl:LAYS['1:'+ex.tpl]?'1:'+ex.tpl:layKey(ex.tpl);};
+// Bố cục phiếu giáo viên đang dùng cho bài kiểm tra (khung ngắm khi quét): bài tạo trước 15/11/2026 dùng mẫu cũ
+const exLayKey=ex=>ex.sheetV>=2||!LAYS['1:'+ex.tpl]?layKey(ex.tpl):'1:'+ex.tpl;
 const smallF=F=>F.H<200;
 
 function drawSheet(ctx,L,K){
@@ -1771,7 +1838,7 @@ function showKeyQR(e){
 /* ---------- Mã QR tra điểm cho học sinh ---------- */
 function appBase(){try{const v=localStorage.getItem('ct_base');if(v)return v;}catch(e){}
  if(/^https?:$/.test(location.protocol)&&!/claude\.(ai|site|com)|claudeusercontent|androidplatform\.net|localhost/.test(location.hostname))return location.origin+location.pathname;return DEFAULT_BASE;}
-const BUILD='17/11/2026 17:55';
+const BUILD='18/11/2026 14:25';
 const DEFAULT_BASE='https://hatthi32.github.io/CHAMTHI-TN/';
 const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const unb64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
