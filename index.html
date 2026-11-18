@@ -1381,22 +1381,23 @@ async function blobToImg(b){return new Promise((res,rej)=>{const u=URL.createObj
 function drawOverlay(ctx,ex,res){
  const L=lay(resLayKey(ex,res)),K=ctx.canvas.width/L.F.W,key=ex.keys[res.ans.made],a=res.ans,off=res.offs||[];
  const P=b=>{const o=off[b.b]||[0,0];return[(b.x+o[0])*K,(b.y+o[1])*K]};
- const ring=(b,col,w=2.4)=>{const[x,y]=P(b);ctx.strokeStyle=col;ctx.lineWidth=w*K/4;ctx.beginPath();ctx.arc(x,y,RB*(res.rs||1)*K*1.25,0,Math.PI*2);ctx.stroke();};
- const G='#12a150',RD='#e02a20',YE='#e8b400',BL='#2a6ee0';
- L.made.forEach((c,j)=>{const d=parseInt((a.madeRaw||a.made)[j]);if(d>=0)ring(c[d],G,3);});
- L.sbd.forEach((c,j)=>{const d=parseInt(a.sbd[j]);if(d>=0)ring(c[d],G,3);});
- // Mỗi câu một vòng tại ĐÁP ÁN ĐÚNG: xanh = tô đúng, đỏ = tô sai, vàng = bỏ trống / tô nhiều ô / tô mờ
+ // vòng mảnh (≈0,4 mm), màu tươi, ôm sát ngoài viền ô
+ const ring=(b,col)=>{const[x,y]=P(b);ctx.strokeStyle=col;ctx.lineWidth=0.42*K;ctx.beginPath();ctx.arc(x,y,RB*(res.rs||1)*K*1.3,0,Math.PI*2);ctx.stroke();};
+ const G='#00d150',RD='#ff1f3d',YE='#ffb300',BL='#2979ff';
+ L.made.forEach((c,j)=>{const d=parseInt((a.madeRaw||a.made)[j]);if(d>=0)ring(c[d],G);});
+ L.sbd.forEach((c,j)=>{const d=parseInt(a.sbd[j]);if(d>=0)ring(c[d],G);});
+ // Mỗi câu một vòng tại ĐÁP ÁN ĐÚNG: xanh = tô đúng; vàng = tô mờ nghi ngờ hoặc tô 2 ô trở lên; đỏ = tô sai hoặc bỏ trống
  const uns=new Set(res.unsure||[]);
- const stat=(mk,correct,name)=>uns.has(name)?YE:(!mk||mk.length>1||mk.includes('?'))?YE:mk===correct?G:RD;
+ const stat=(mk,correct,name)=>uns.has(name)||mk.length>1||mk.includes('?')?YE:mk===correct?G:RD;
  if(!key){for(let i=0;i<ex.n1;i++)for(const ch of (a.p1[i]||''))ring(L.p1[i][LETTERS.indexOf(ch)],BL);}
  else{
-  for(let i=0;i<ex.n1;i++){const kk=key.p1[i];if(!kk)continue;ring(L.p1[i][LETTERS.indexOf(kk)],stat(a.p1[i]||'',kk,'Phần I câu '+(i+1)),3);}
+  for(let i=0;i<ex.n1;i++){const kk=key.p1[i];if(!kk)continue;ring(L.p1[i][LETTERS.indexOf(kk)],stat(a.p1[i]||'',kk,'Phần I câu '+(i+1)));}
   for(let i=0;i<ex.n2;i++)for(let s2=0;s2<4;s2++){const kv=key.p2[i]?key.p2[i][s2]:null;if(kv==null)continue;const kc=kv?'D':'S';
-   ring(L.p2[i][s2][kv?0:1],stat(((a.p2[i]||[])[s2])||'',kc,`Phần II câu ${i+1}${'abcd'[s2]}`),3);}
+   ring(L.p2[i][s2][kv?0:1],stat(((a.p2[i]||[])[s2])||'',kc,`Phần II câu ${i+1}${'abcd'[s2]}`));}
   for(let i=0;i<ex.n3;i++){const q=L.p3[i],kk=normAns(key.p3[i]||''),sa=a.p3[i]||'';if(!kk)continue;
-   const col=uns.has('Phần III câu '+(i+1))||!sa||sa.includes('?')?YE:eqAns(sa,kk)?G:RD;
-   [...kk].slice(0,4).forEach((ch,j)=>{let b=null;if(ch==='-'&&j===0)b=q.minus;else if(ch===',')b=q.comma[j];else if(/\d/.test(ch))b=q.digits[j][+ch];if(b)ring(b,col,3);});
-   const o=off[q.minus.b]||[0,0];ctx.font=`700 ${3.3*K}px "Plus Jakarta Sans",Arial,sans-serif`;ctx.fillStyle=col===G?'#0d7a3c':col===RD?'#c41b12':'#a87d00';ctx.textAlign='center';ctx.textBaseline='middle';
+   const col=uns.has('Phần III câu '+(i+1))||sa.includes('?')?YE:sa&&eqAns(sa,kk)?G:RD;
+   [...kk].slice(0,4).forEach((ch,j)=>{let b=null;if(ch==='-'&&j===0)b=q.minus;else if(ch===',')b=q.comma[j];else if(/\d/.test(ch))b=q.digits[j][+ch];if(b)ring(b,col);});
+   const o=off[q.minus.b]||[0,0];ctx.font=`700 ${3.3*K}px "Plus Jakarta Sans",Arial,sans-serif`;ctx.fillStyle=col===G?'#00a63e':col===RD?'#e0102e':'#c98a00';ctx.textAlign='center';ctx.textBaseline='middle';
    ctx.font=`700 ${3*K}px "Plus Jakarta Sans",Arial,sans-serif`;const tx=(q.minus.x+7.5+o[0])*K,ty=(q.minus.y-8+o[1])*K,tw=ctx.measureText('ĐA '+kk).width+3*K;const fc=ctx.fillStyle;ctx.fillStyle='rgba(255,255,255,0.93)';ctx.fillRect(tx-tw/2,ty-2.6*K,tw,5.2*K);ctx.fillStyle=fc;ctx.fillText('ĐA '+kk,tx,ty);}
  }
  const sc=res.score;
@@ -1838,7 +1839,7 @@ function showKeyQR(e){
 /* ---------- Mã QR tra điểm cho học sinh ---------- */
 function appBase(){try{const v=localStorage.getItem('ct_base');if(v)return v;}catch(e){}
  if(/^https?:$/.test(location.protocol)&&!/claude\.(ai|site|com)|claudeusercontent|androidplatform\.net|localhost/.test(location.hostname))return location.origin+location.pathname;return DEFAULT_BASE;}
-const BUILD='18/11/2026 14:25';
+const BUILD='18/11/2026 14:36';
 const DEFAULT_BASE='https://hatthi32.github.io/CHAMTHI-TN/';
 const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const unb64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
@@ -2914,9 +2915,9 @@ function xdToExam(){const d=XDS&&XDS.done;if(!d)return;const sheets=[{rows:d.row
 let resOrder={eid:null,ids:[]};
 const ZOOMI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M10.5 7.5v6M7.5 10.5h6"/></svg>';
 const partLine=(e,s)=>[e.n1?`P1 <b>${s.p1c}/${e.n1}</b> = ${fmt(s.s1)}`:'',e.n2?`P2 <b>${s.p2c.join('·')}</b> = ${fmt(s.s2)}`:'',e.n3?`P3 <b>${s.p3c}/${e.n3}</b> = ${fmt(s.s3)}`:''].filter(Boolean).map(x=>`<span style="white-space:nowrap">${x}</span>`).join('<i>|</i>');
-// Bảng chi tiết từng câu: xanh = đúng, đỏ = sai (kèm đáp án đúng), vàng = bỏ trống / tô nhiều / chưa chắc
+// Bảng chi tiết từng câu (cùng quy ước với vòng trên ảnh): xanh = đúng, đỏ = sai hoặc bỏ trống, vàng = tô nhiều ô / tô mờ chưa chắc
 function qDetail(e,r){const key=e.keys[r.ans.made];if(!key)return'';const a=r.ans,uns=new Set(r.unsure||[]);
- const cls=(mk,ok,nm)=>uns.has(nm)||!mk||mk.length>1||mk.includes('?')?'w':ok?'g':'r';
+ const cls=(mk,ok,nm)=>uns.has(nm)||mk.length>1||mk.includes('?')?'w':ok?'g':'r';
  const P2=v=>v==='D'?'Đ':v==='S'?'S':v?'?':'–';let h='';
  if(e.n1){h+=`<div class="qh">Phần I · ${r.score?r.score.p1c:0}/${e.n1} câu đúng</div><div class="qg">`;
   for(let i=0;i<e.n1;i++){const mk=a.p1[i]||'',k=key.p1[i]||'',c=cls(mk,mk===k,'Phần I câu '+(i+1));
