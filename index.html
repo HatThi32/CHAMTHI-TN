@@ -126,6 +126,8 @@ input.in:focus,select.in:focus,textarea.in:focus{outline:2px solid var(--accent)
 .qc.g{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}.qc.r{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}.qc.w{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
 .q2{display:flex;flex-direction:column;gap:6px}.q2r{display:grid;grid-template-columns:52px repeat(4,minmax(0,1fr)) auto;gap:6px;align-items:center}.q2r>.n{font-size:13px;font-weight:700}.q2r .pt{font-size:12px;color:var(--muted);white-space:nowrap}
 .qlg{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.qlg .qc{min-height:0;padding:3px 10px;flex-direction:row}.qlg .qc b{font-size:12px;font-weight:700}
+.pend .prow{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}.pend .prow input{width:22px;height:22px;accent-color:var(--accent)}.pend .pl{font-weight:600;font-size:14px}.pend{border-left:4px solid #ffc400}
+.vw .vnav{position:absolute;bottom:14px;z-index:3;width:52px;height:52px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;display:grid;place-items:center;box-shadow:0 2px 8px rgba(0,0,0,.4)}.vw .vnav svg{width:28px;height:28px}.vw .vp{left:14px}.vw .vn{right:14px}.vw .vnav:disabled{opacity:.25}
 .vw .zt{gap:8px}.vw .vhd{flex:1;display:flex;flex-direction:column;min-width:0;line-height:1.2}.vw .vhd b{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.vw .vhd span{font-size:12.5px;color:rgba(255,255,255,.7)}
 .vw .vsc{font:800 26px/1 var(--f);color:#ff8a80;padding:0 4px}.vw .vsc.hi{color:#7ee2a8}.vw .vedit{width:auto;padding:0 14px;border-radius:23px;font-size:15px}
 .vw .vtrack{position:absolute;inset:0;will-change:transform}.vw .vtrack .zimg{position:absolute;left:50%;top:50%}.vw .vload{position:absolute;inset:0;display:grid;place-items:center}
@@ -1162,7 +1164,7 @@ function pxAt(R,x,y){const u=Math.round(x*R.K),v=Math.round(y*R.K);if(u<0||v<0||
 const RING=(()=>{const a=[];for(const rr of [RB-0.1,RB+0.1])for(let i=0;i<12;i++){const t=i*Math.PI/6;a.push([rr*Math.cos(t),rr*Math.sin(t)]);}return a;})();
 function ringDark(R,x,y,s=1){let t=0;const K=R.K,W=R.W,Hh=R.H,g=R.g;for(const p of RING){const u=Math.round((x+p[0]*s)*K),v=Math.round((y+p[1]*s)*K);t+=(u<0||v<0||u>=W||v>=Hh)?0:255-g[v*W+u];}return t*1.5;}
 function readFills(R,L){
- const offs=[],fills=new Map(),ringC=new Map(),quality=[];
+ const offs=[],fills=new Map(),ringC=new Map(),quality=[],paperL=new Map();
  // Phiếu in từ nơi khác (QM): cỡ ô tròn có thể khác chút ít, tự dò bán kính viền ô trên chính ảnh
  let rs=L.rb?L.rb/RB:1;if(L.F.marks){let bestS=-1;for(const s of [0.8,0.86,0.92,0.98,1.04,1.1,1.16,1.22]){let tot=0;
    for(const bs of L.blocks){let m=0;for(let dx=-1.5;dx<=1.501;dx+=0.5)for(let dy=-1.5;dy<=1.501;dy+=0.5){let t=0;for(const b of bs)t+=ringDark(R,b.x+dx,b.y+dy,s);if(t>m)m=t;}tot+=m;}
@@ -1191,13 +1193,13 @@ function readFills(R,L){
    // lấy mẫu theo 4 hướng chéo: tránh chạm viền/chữ của các ô bên cạnh (ô xếp sát nhau)
    const lw=[];for(let k=0;k<4;k++){const a=k*Math.PI/2+Math.PI/4,px=cx+Math.cos(a)*(RBs+1.15)*K,py=cy+Math.sin(a)*(RBs+1.15)*K;let s2=0,c2=0;
     for(let v=Math.round(py-1);v<=Math.round(py+1);v++)for(let u=Math.round(px-1);u<=Math.round(px+1);u++)if(u>=0&&v>=0&&u<R.W&&v<R.H){s2+=R.g[v*R.W+u];c2++;}lw.push(c2?s2/c2:white);}
-   lw.sort((a,b)=>a-b);const we=Math.max(40,Math.min(white,(lw[2]+lw[3])/2));
+   lw.sort((a,b)=>a-b);paperL.set(b,(lw[2]+lw[3])/2);const we=Math.max(40,Math.min(white,(lw[2]+lw[3])/2));
    ringC.set(b,(white-(255-bvv/36))/white);
    const innerAt=(cx,cy)=>{let t=0,m=0;for(let v=Math.floor(cy-rin);v<=Math.ceil(cy+rin);v++)for(let u=Math.floor(cx-rin);u<=Math.ceil(cx+rin);u++){if((u-cx)**2+(v-cy)**2>rin*rin||u<0||v<0||u>=R.W||v>=R.H)continue;t+=R.g[v*R.W+u];m++;}return m?t/m:255;};
    // ô tô lệch/không kín (gạch chéo, chấm nhỏ) có thể kéo vị trí tinh chỉnh lệch khỏi tâm: đo cả ở vị trí theo khối, lấy chỗ đậm hơn
    const inner=Math.min(innerAt(cx,cy),bx!==best[0]||by!==best[1]?innerAt((b.x+best[0])*K,(b.y+best[1])*K):255);fills.set(b,Math.max(0,Math.min(1,(we-inner)/we)));}
  });
- return{offs,fills,ringC,quality,rs};
+ return{offs,fills,ringC,quality,rs,paperL};
 }
 // Quyết định cho một nhóm ô (một câu / một cột số), dùng độ đậm ĐÃ TRỪ nền (chữ in mờ trong ô):
 // so sánh tương đối trong nhóm nên tô nhạt, tô không kín, chấm nhỏ vẫn nhận; vết tẩy mờ hơn hẳn ô tô thì bỏ qua.
@@ -1252,10 +1254,10 @@ function analyzeCanvas(cv,ex,hint){const wantTpl=ex?ex.tpl:null;
  // Đọc ô tô trên kênh màu đỏ: mực xanh/đen và bút chì đậm rõ, nét bút đỏ chấm bài của giáo viên gần như biến mất
  const gr=new Uint8Array(w*h);for(let i=0,j=0;i<gr.length;i++,j+=4)gr[i]=id.data[j];
  const R=warpGray(gr,w,h,H,5,F);let L=lay(lk),lv=0;
- let {offs,fills,ringC,quality,rs}=readFills(R,L);
+ let {offs,fills,ringC,quality,rs,paperL}=readFills(R,L);
  // Mẫu 1/2: thử cả bố cục cũ, lấy bố cục có viền ô tròn Phần I khớp rõ hơn
  if(LAYS[lk].alt){const L0=lay(LAYS[lk].alt),r0=readFills(R,L0);const md=(LL,rc)=>{const v=LL.p1.flat().map(b=>rc.get(b)).sort((a,b)=>a-b);return v[v.length>>1]||0;};
-  if(md(L0,r0.ringC)>md(L,ringC)*1.15){L=L0;lv=1;lk=LAYS[lk].alt;({offs,fills,ringC,quality,rs}=r0);}}
+  if(md(L0,r0.ringC)>md(L,ringC)*1.15){L=L0;lv=1;lk=LAYS[lk].alt;({offs,fills,ringC,quality,rs,paperL}=r0);}}
  // 1) ánh sáng & lóa: viền ô tròn phải thấy rõ ở mọi ô cần đọc
  const usedB=[];L.blocks.forEach((bs,bi)=>{if(bs.some(b=>usedBubble(ex,b)))usedB.push(bi);});
  const whites=usedB.map(bi=>quality[bi].white).sort((a,b)=>a-b),medW=whites[whites.length>>1]||255;
@@ -1265,9 +1267,17 @@ function analyzeCanvas(cv,ex,hint){const wantTpl=ex?ex.tpl:null;
  allC.sort((x,y)=>x-y);const medC=allC[allC.length>>1]||0;
  if(medC<0.05)return{error:'Ảnh bị nhòe hoặc mờ, máy không thấy rõ các ô tròn. Giữ điện thoại chắc tay, đưa lại gần phiếu hơn và chụp nơi đủ sáng.',quality:true};
  const cmin=Math.max(0.04,Math.min(CMIN,medC*0.4));
- for(const bi of usedB){for(const b of L.blocks[bi]){if(!usedBubble(ex,b))continue;const c=ringC.get(b);if(c<cmin&&fills.get(b)<0.3){const nm=qName(b);bad.set(nm,(bad.get(nm)||0)+1);}}}
- if(bad.size){const glare=usedB.some(bi=>quality[bi].sat>0.12);const names=[...bad.keys()];
-  return{error:`Không đọc rõ ${names.length>6?names.slice(0,6).join(', ')+'… ('+names.length+' chỗ)':names.join(', ')} vì ${glare?'bị lóa hoặc phản chiếu ánh đèn':'ảnh bị mờ hoặc thiếu sáng'}. ${glare?'Nghiêng nhẹ điện thoại hoặc đổi hướng đèn':'Giữ máy chắc tay, thêm ánh sáng'} rồi chụp lại.`,quality:true,badList:names};}
+ const pwAll=[];for(const bi of usedB)for(const b of L.blocks[bi])if(usedBubble(ex,b))pwAll.push(paperL.get(b));pwAll.sort((a,b)=>a-b);const medPW=pwAll[pwAll.length>>1]||255,bright=b=>{const pw=paperL.get(b);return pw-medPW>=Math.max(10,medPW*0.06)||pw>=250;};
+ let nBright=0,nBad=0;for(const bi of usedB){for(const b of L.blocks[bi]){if(!usedBubble(ex,b))continue;const c=ringC.get(b);if(c<cmin&&fills.get(b)<0.3){const nm=qName(b);bad.set(nm,(bad.get(nm)||0)+1);nBad++;if(bright(b))nBright++;}}}
+ if(bad.size){const glare=nBright>=Math.max(1,nBad*0.4)||usedB.some(bi=>quality[bi].sat>0.12);const names=[...bad.keys()];
+  return glare?{error:`Phiếu bị chói đèn ở ${names.length>5?names.slice(0,5).join(', ')+'…':names.join(', ')}. Nghiêng nhẹ phiếu hoặc điện thoại, hoặc che bớt đèn cho hết vệt sáng rồi quét lại.`,quality:true,glare:true,badList:names}:{error:`Không đọc rõ ${names.length>6?names.slice(0,6).join(', ')+'… ('+names.length+' chỗ)':names.join(', ')} vì ảnh bị mờ hoặc thiếu sáng. Giữ máy chắc tay, thêm ánh sáng rồi chụp lại.`,quality:true,badList:names};}
+ // 2) chói đèn (đèn huỳnh quang phản chiếu): vùng giấy sáng gắt hơn hẳn phần còn lại và viền ô ở đó bị bạc đi.
+ //    Ô tô dưới vùng chói trông nhạt hơn thật → có thể chấm sai, nên báo và KHÔNG chấm.
+ {const gl=new Map();
+  for(const bi of usedB)for(const b of L.blocks[bi]){if(!usedBubble(ex,b))continue;const pw=paperL.get(b),c=ringC.get(b);
+   if((pw-medPW>=Math.max(10,medPW*0.06)||pw>=250)&&c<medC*0.65){const nm=qName(b);gl.set(nm,(gl.get(nm)||0)+1);}}
+  const nG=[...gl.values()].reduce((a,b)=>a+b,0);
+  if(nG>=3){const names=[...gl.keys()];return{error:`Phiếu bị chói đèn ở ${names.length>5?names.slice(0,5).join(', ')+'…':names.join(', ')}. Nghiêng nhẹ phiếu hoặc điện thoại, hoặc che bớt đèn cho hết vệt sáng rồi quét lại.`,quality:true,glare:true,badList:names};}}
  // Trừ nền: ô trống có chữ in mờ bên trong (A, B, 0–9…) nên mỗi loại chữ có độ đậm nền riêng; lấy mức thấp (15%) của cùng loại trên chính phiếu (Phần II có thể một nửa số ô Đ/S đã tô)
  const grp=new Map();for(const bs of L.blocks)for(const b of bs){const k=b.kind+'|'+(b.lab||'');if(!grp.has(k))grp.set(k,[]);grp.get(k).push(fills.get(b));}
  const allF=[...fills.values()].sort((a,b)=>a-b),gBase=allF[Math.floor(allF.length*0.15)]||0,base=new Map();
@@ -1309,11 +1319,13 @@ const p2of=ex=>Array.isArray(ex.p2pts)&&ex.p2pts.length===4?ex.p2pts:[0.1,0.25,0
 function examMax(ex){return ex.n1*ex.p1pt+ex.n2*Math.max(...p2of(ex))+ex.n3*ex.p3pt;}
 // Cộng điểm bằng số nguyên (phần nghìn điểm) để không có sai số kiểu 0,1 + 0,2 = 0,30000000000000004
 const pm=x=>Math.round((+x||0)*1000);
+// Ô khoanh vàng (tô mờ nghi ngờ) KHÔNG được cộng điểm cho đến khi giáo viên xem và bấm "Cộng điểm" (ans.acc)
+const pendOf=ans=>{const acc=new Set(ans.acc||[]);return new Set((ans.uns||[]).filter(n=>!acc.has(n)));};
 function grade(ex,ans){
- const key=ex.keys&&ex.keys[ans.made];if(!key)return null;
- let p1c=0;for(let i=0;i<ex.n1;i++)if(ans.p1[i]&&ans.p1[i]===key.p1[i])p1c++;
- const p2c=[];let s2=0;for(let i=0;i<ex.n2;i++){let k=0;for(let s=0;s<4;s++){const kk=key.p2[i]&&key.p2[i][s];if(kk==null)continue;if((ans.p2[i]||[])[s]===(kk?'D':'S'))k++;}p2c.push(k);s2+=k?pm(p2of(ex)[k-1]):0;}
- let p3c=0;for(let i=0;i<ex.n3;i++)if(eqAns(ans.p3[i],key.p3[i]))p3c++;
+ const key=ex.keys&&ex.keys[ans.made];if(!key)return null;const skip=pendOf(ans);
+ let p1c=0;for(let i=0;i<ex.n1;i++)if(ans.p1[i]&&ans.p1[i]===key.p1[i]&&!skip.has('Phần I câu '+(i+1)))p1c++;
+ const p2c=[];let s2=0;for(let i=0;i<ex.n2;i++){let k=0;for(let s=0;s<4;s++){const kk=key.p2[i]&&key.p2[i][s];if(kk==null)continue;if((ans.p2[i]||[])[s]===(kk?'D':'S')&&!skip.has(`Phần II câu ${i+1}${'abcd'[s]}`))k++;}p2c.push(k);s2+=k?pm(p2of(ex)[k-1]):0;}
+ let p3c=0;for(let i=0;i<ex.n3;i++)if(eqAns(ans.p3[i],key.p3[i])&&!skip.has('Phần III câu '+(i+1)))p3c++;
  const S1=p1c*pm(ex.p1pt),S3=p3c*pm(ex.p3pt),RAW=S1+s2+S3,MAX=ex.n1*pm(ex.p1pt)+ex.n2*Math.max(...p2of(ex).map(pm))+ex.n3*pm(ex.p3pt);
  const total=ex.scale10&&MAX>0?RAW*10/MAX:RAW;
  return{p1c,s1:r2(S1/1000),p2c,s2:r2(s2/1000),p3c,s3:r2(S3/1000),raw:r2(RAW/1000),total:r2(total/1000),max:r2(MAX/1000)};
@@ -1391,7 +1403,7 @@ function drawOverlay(ctx,ex,res){
  L.made.forEach((c,j)=>{const d=parseInt((a.madeRaw||a.made)[j]);if(d>=0)ring(c[d],G);});
  L.sbd.forEach((c,j)=>{const d=parseInt(a.sbd[j]);if(d>=0)ring(c[d],G);});
  // Mỗi câu một vòng tại ĐÁP ÁN ĐÚNG: xanh = tô đúng; vàng = tô mờ nghi ngờ hoặc tô 2 ô trở lên; đỏ = tô sai hoặc bỏ trống
- const uns=new Set(res.unsure||[]);
+ const uns=res.ans.uns?pendOf(res.ans):new Set(res.unsure||[]);
  const stat=(mk,correct,name)=>uns.has(name)||mk.length>1||mk.includes('?')?YE:mk===correct?G:RD;
  if(!key){for(let i=0;i<ex.n1;i++)for(const ch of (a.p1[i]||''))ring(L.p1[i][LETTERS.indexOf(ch)],BL);}
  else{
@@ -1951,6 +1963,7 @@ async function saveAnalysis(e,A){
  const imgId=uid(),blob=await canvasBlob(A.disp,'image/jpeg',0.8);await DB.put('images',{id:imgId,blob});
  const cr=lay(A.lk).F.crop,crop=document.createElement('canvas');crop.width=1100;crop.height=Math.round(1100*cr[3]/cr[2]);{const kd=A.disp.width/lay(A.lk).F.W;crop.getContext('2d').drawImage(A.disp,cr[0]*kd,cr[1]*kd,cr[2]*kd,cr[3]*kd,0,0,crop.width,crop.height);}
  const res={id:uid(),examId:e.id,time:Date.now(),timeStr:nowStr(),ans:A.ans,offs:A.offs,flags:A.flags||[],unsure:A.unsure||[],rs:A.rs||1,lv:A.lv||0,lk:A.lk,imgId,crop:crop.toDataURL('image/jpeg',0.75)};
+ res.ans.uns=(A.unsure||[]).slice();res.ans.acc=[];
  res.score=grade(e,res.ans);res.name=nameFor(e,res.ans.sbd);res.cls=(stuOf(e,res.ans.sbd)||{}).cls||'';const all=await DB.byExam(e.id);res.issues=issuesOf(e,res,all.concat([res]));
  await DB.put('results',res);
  for(const o of all)if(o.ans.sbd===res.ans.sbd&&!/[_?]/.test(res.ans.sbd)&&!o.issues.includes('Trùng SBD với bài khác')){o.issues.push('Trùng SBD với bài khác');await DB.put('results',o);}
@@ -2453,8 +2466,9 @@ function xdHeaderXml(I,code,{noTable=false}={}){
  const w1=Math.round(STD.tw*0.42),w2=STD.tw-w1;
  let x='<w:bookmarkStart w:id="9990" w:name="_xdHead"/>'+tbl([w1,w2],cell(w1,left)+cell(w2,right));
  x+=wp('',{before:0});
+ // Phiếu trả lời đã có ô Họ tên, Lớp, SBD nên ở đây chỉ còn ô Mã đề
  const wa=STD.tw-1900-200,wb2=200,wc=1900;
- x+=tbl([wa,wb2,wc],cell(wa,wp(wr('Họ, tên thí sinh: ........................................................',{b:false})+'',{before:60})+wp(wr('Số báo danh: .............................................................'),{before:60}))+cell(wb2,wp(''))+cell(wc,wp(wr('Mã đề '+code,{b:true,sz:26}),{jc:'center',before:40,after:40}),true));
+ x+=tbl([wa,wb2,wc],cell(wa,wp(''))+cell(wb2,wp(''))+cell(wc,wp(wr('Mã đề '+code,{b:true,sz:26}),{jc:'center',before:40,after:40}),true));
  x+=wp('',{before:0})+'<w:bookmarkEnd w:id="9990"/>';
  return x;}
 /* Đưa khối tiêu đề (trường, "Đề có … trang", mã đề) vào phần đầu trang của TRANG ĐẦU (header "first").
@@ -2924,7 +2938,7 @@ let resOrder={eid:null,ids:[]};
 const ZOOMI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M10.5 7.5v6M7.5 10.5h6"/></svg>';
 const partLine=(e,s)=>[e.n1?`P1 <b>${s.p1c}/${e.n1}</b> = ${fmt(s.s1)}`:'',e.n2?`P2 <b>${s.p2c.join('·')}</b> = ${fmt(s.s2)}`:'',e.n3?`P3 <b>${s.p3c}/${e.n3}</b> = ${fmt(s.s3)}`:''].filter(Boolean).map(x=>`<span style="white-space:nowrap">${x}</span>`).join('<i>|</i>');
 // Bảng chi tiết từng câu (cùng quy ước với vòng trên ảnh): xanh = đúng, đỏ = sai hoặc bỏ trống, vàng = tô nhiều ô / tô mờ chưa chắc
-function qDetail(e,r){const key=e.keys[r.ans.made];if(!key)return'';const a=r.ans,uns=new Set(r.unsure||[]);
+function qDetail(e,r){const key=e.keys[r.ans.made];if(!key)return'';const a=r.ans,uns=a.uns?pendOf(a):new Set(r.unsure||[]);
  const cls=(mk,ok,nm)=>uns.has(nm)||mk.length>1||mk.includes('?')?'w':ok?'g':'r';
  const P2=v=>v==='D'?'Đ':v==='S'?'S':v?'?':'–';let h='';
  if(e.n1){h+=`<div class="qh">Phần I · ${r.score?r.score.p1c:0}/${e.n1} câu đúng</div><div class="qg">`;
@@ -2978,7 +2992,7 @@ async function openViewer(eid,ids,idx){
  const ov=document.createElement('div');ov.className='zv vw';ov.setAttribute('role','dialog');ov.setAttribute('aria-label','Xem bài làm');
  ov.innerHTML=`<div class="zt"><button class="zb" data-z="x" aria-label="Đóng"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
   <div class="vhd grow"><b id="vT"></b><span id="vN" class="num"></span></div><span id="vS" class="vsc num"></span><button class="zb" data-z="r" aria-label="Xoay ảnh"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg></button><button class="zb vedit" data-z="e" aria-label="Sửa bài này">Sửa</button></div>
-  <div class="zs"><div class="vtrack"><canvas class="zimg"></canvas></div><div class="vload" hidden><span class="spin"></span></div></div><div class="vi" id="vI"></div>`;
+  <div class="zs"><div class="vtrack"><canvas class="zimg"></canvas></div><div class="vload" hidden><span class="spin"></span></div><button class="vnav vp" data-z="p" aria-label="Bài trước"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><button class="vnav vn" data-z="n" aria-label="Bài sau"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button></div><div class="vi" id="vI"></div>`;
  document.body.appendChild(ov);
  const st=ov.querySelector('.zs'),track=ov.querySelector('.vtrack'),img=ov.querySelector('.zimg');
  const cache=new Map(),getRes=async i=>{const id=ids[i];if(id==null)return null;if(!cache.has(id))cache.set(id,(async()=>{const r=await DB.get('results',id);if(!r)return null;const c=await renderGraded(e,r);return{r,c};})());return cache.get(id);};
@@ -2994,11 +3008,12 @@ async function openViewer(eid,ids,idx){
   if(dir){track.style.transition='none';apply(dir*st.clientWidth*0.35);requestAnimationFrame(()=>{track.style.transition='transform .18s ease-out';apply(0);});}else apply();
   ov.querySelector('#vT').textContent=dn(r)||rTitle(r);ov.querySelector('#vN').textContent=`Bài ${i+1}/${ids.length} · Mã đề ${r.ans.made}`;
   ov.querySelector('#vS').textContent=r.score?fmt(r.score.total):'–';ov.querySelector('#vS').className='vsc num'+(r.score&&r.score.total>=(e.scale10?10:examMax(e))/2?' hi':'');
-  const crit=r.issues.filter(critical);ov.querySelector('#vI').innerHTML=crit.length?crit.map(x=>`<span class="pill bad">${esc(x)}</span>`).join(''):'';
+  const crit=r.issues.filter(critical),np=r.ans.uns?pendOf(r.ans).size:0;ov.querySelector('#vI').innerHTML=crit.map(x=>`<span class="pill bad">${esc(x)}</span>`).join('')+(np?`<span class="pill warn">${np} ô vàng chưa cộng điểm · bấm Sửa để xem</span>`:'');
+  ov.querySelector('.vp').disabled=i<=0;ov.querySelector('.vn').disabled=i>=ids.length-1;
   // tải sẵn bài kề bên để vuốt không phải chờ
   setTimeout(()=>{getRes(i+1);getRes(i-1);},50);};
  const onR=()=>{fit();apply();};window.addEventListener('resize',onR);
- st.addEventListener('pointerdown',ev=>{st.setPointerCapture(ev.pointerId);pts.set(ev.pointerId,[ev.clientX,ev.clientY]);track.style.transition='none';
+ st.addEventListener('pointerdown',ev=>{if(ev.target.closest('.vnav'))return;st.setPointerCapture(ev.pointerId);pts.set(ev.pointerId,[ev.clientX,ev.clientY]);track.style.transition='none';
   if(pts.size===2){const[a,b]=[...pts.values()];pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1]),s};drag=null;}
   else{const now=Date.now();if(now-last<300){zoomAt(s>1.2?1:2.6,ev.clientX,ev.clientY);if(s===1){tx=ty=0;apply();}last=0;}else last=now;drag={x:ev.clientX,y:ev.clientY,tx,ty};}});
  st.addEventListener('pointermove',ev=>{if(!pts.has(ev.pointerId))return;pts.set(ev.pointerId,[ev.clientX,ev.clientY]);
@@ -3006,14 +3021,17 @@ async function openViewer(eid,ids,idx){
   else if(drag){if(s===1)apply(ev.clientX-drag.x);else{tx=drag.tx+ev.clientX-drag.x;ty=drag.ty+ev.clientY-drag.y;apply();}}});
  const up=ev=>{pts.delete(ev.pointerId);if(pts.size<2)pinch=null;
   if(!pts.size){if(drag&&s===1){const dx=ev.clientX-drag.x;track.style.transition='transform .15s ease-out';
-    if(Math.abs(dx)>60&&Math.abs(ev.clientY-drag.y)<120&&((dx<0&&cur<ids.length-1)||(dx>0&&cur>0)))show(cur+(dx<0?1:-1),dx<0?1:-1);else apply(0);}drag=null;}
+    if(Math.abs(dx)>60&&Math.abs(ev.clientY-drag.y)<120&&((dx<0&&cur<ids.length-1)||(dx>0&&cur>0)))show(cur+(dx<0?1:-1),dx<0?1:-1);else apply(0);}
+   else if(drag&&s>1){// đang phóng to: kéo quá mép ảnh thêm một đoạn thì sang bài kế
+    const dx=ev.clientX-drag.x,over=drag.tx+dx-tx;if(Math.abs(over)>70&&Math.abs(ev.clientY-drag.y)<Math.abs(dx)&&((over<0&&cur<ids.length-1)||(over>0&&cur>0)))show(cur+(over<0?1:-1),over<0?1:-1);}
+   drag=null;}
   else{const[p]=[...pts.values()];drag={x:p[0],y:p[1],tx,ty};}};
  st.addEventListener('pointerup',up);st.addEventListener('pointercancel',up);
  st.addEventListener('wheel',ev=>{ev.preventDefault();zoomAt(s*(ev.deltaY<0?1.2:1/1.2),ev.clientX,ev.clientY);},{passive:false});
  const close=()=>{window.removeEventListener('resize',onR);document.removeEventListener('keydown',onK);window.__ctBackHook=null;ov.remove();};
  window.__ctBackHook=()=>{close();return true;};
  const onK=ev=>{if(ev.key==='Escape')close();else if(ev.key==='ArrowRight')show(cur+1,1);else if(ev.key==='ArrowLeft')show(cur-1,-1);};document.addEventListener('keydown',onK);
- ov.addEventListener('click',ev=>{const b=ev.target.closest('[data-z]');if(!b)return;if(b.dataset.z==='x')close();else if(b.dataset.z==='r'){rot=rot?0:90;try{localStorage.setItem('ct_vrot',rot)}catch(x){}s=1;tx=ty=0;fit();apply();}else if(b.dataset.z==='e'){const rid=ids[cur];close();go('result',{id:e.id,rid});}});
+ ov.addEventListener('click',ev=>{const b=ev.target.closest('[data-z]');if(!b)return;if(b.dataset.z==='x')close();else if(b.dataset.z==='r'){rot=rot?0:90;try{localStorage.setItem('ct_vrot',rot)}catch(x){}s=1;tx=ty=0;fit();apply();}else if(b.dataset.z==='n')show(cur+1,1);else if(b.dataset.z==='p')show(cur-1,-1);else if(b.dataset.z==='e'){const rid=ids[cur];close();go('result',{id:e.id,rid});}});
  await show(idx);}
 document.addEventListener('click',ev=>{const el=ev.target.closest('[data-view]');if(!el)return;ev.stopPropagation();const v=JSON.parse(el.dataset.view);const ids=(resOrder.eid===v.id&&resOrder.ids.includes(v.rid))?resOrder.ids:[v.rid];openViewer(v.id,ids,ids.indexOf(v.rid));},true);
 // Một hàng gọn trong danh sách bài đã chấm: dòng điểm từng phần + ảnh phần họ tên bên trái; SBD, mã đề, điểm bên phải
@@ -3041,6 +3059,13 @@ V.results=async(p)=>{
  <div class="menu">${rows||'<div class="empty"><b>Chưa có bài nào</b><span>Vào Chấm bài để chụp phiếu của học sinh.</span></div>'}</div>`,
  after(){$('#rF').onchange=ev=>replace('results',{...p,f:ev.target.value});$('#rS').onchange=ev=>replace('results',{...p,so:ev.target.value});}};
 };
+// Danh sách ô khoanh vàng: giáo viên xem ảnh rồi bấm "Cộng điểm" cho câu thấy học sinh tô đúng
+function pendHtml(e,r){const a=r.ans,list=a.uns||[];if(!list.length)return'';const key=e.keys[a.made],acc=new Set(a.acc||[]);
+ const rd=nm=>{let m;if((m=nm.match(/^Phần I câu (\d+)$/))){const i=+m[1]-1;return[a.p1[i]||'–',key?key.p1[i]:''];}
+  if((m=nm.match(/^Phần II câu (\d+)([abcd])$/))){const i=+m[1]-1,j='abcd'.indexOf(m[2]),v=(a.p2[i]||[])[j],k=key&&key.p2[i]?key.p2[i][j]:null;return[v==='D'?'Đ':v==='S'?'S':'–',k==null?'':k?'Đ':'S'];}
+  if((m=nm.match(/^Phần III câu (\d+)$/))){const i=+m[1]-1;return[a.p3[i]||'–',key?normAns(key.p3[i]||''):''];}return['',''];};
+ return`<div class="card pend"><h3>Ô tô mờ, chưa cộng điểm (${list.filter(n=>!acc.has(n)).length})</h3><div class="note">Xem ảnh bài làm. Câu nào học sinh thật sự tô và tô đúng thì bấm "Cộng điểm".</div>
+  ${list.map(nm=>{const[rv,kv]=rd(nm),ok=kv&&rv===kv;return`<label class="prow"><span class="grow"><b>${esc(nm)}</b> · máy đọc <b>${esc(rv)}</b>${kv?` · đáp án <b>${esc(kv)}</b>`:''}${ok?'':' <span class="note">(không trùng đáp án)</span>'}</span><input type="checkbox" data-acc="${esc(nm)}"${acc.has(nm)?' checked':''}${ok?'':' disabled'}><span class="pl">Cộng điểm</span></label>`;}).join('')}</div>`;}
 V.result=async(p)=>{
  const e=exById(p.id),r=await DB.get('results',p.rid);if(!r)return{title:'Không tìm thấy',html:'<div class="empty">Bài này đã bị xóa.</div>'};
  const ord=resOrder.eid===e.id?resOrder.ids:[],ix=ord.indexOf(r.id),prevId=ix>0?ord[ix-1]:null,nextId=ix>=0&&ix<ord.length-1?ord[ix+1]:null;
@@ -3048,8 +3073,9 @@ V.result=async(p)=>{
  ${ix>=0&&ord.length>1?`<div class="rnav"><button class="btn" id="rPrev"${prevId?'':' disabled'}>‹ Bài trước</button><span class="num">${ix+1} / ${ord.length}</span><button class="btn" id="rNext"${nextId?'':' disabled'}>Bài sau ›</button></div>`:''}
  <div class="card"><div class="row"><div class="grow"><h3>${esc(dn(r)||'Chưa rõ tên')}</h3><div class="meta num"><span>${esc(r.timeStr)}</span></div></div><div class="score" style="font-size:44px;color:${r.score&&r.score.total>=(e.scale10?10:examMax(e))/2?'var(--ok)':'var(--pen)'}">${r.score?fmt(r.score.total):'–'}</div></div>
  ${scoreBlock(e,r)}${issueHtml(r)}</div>
+ ${pendHtml(e,r)}
  <button class="zoomin" id="rZoom" aria-label="Phóng to ảnh bài làm"><canvas id="rImg" class="sheetimg" width="840" height="1188"></canvas><span class="zbadge">${ZOOMI} Chạm để phóng to</span></button>
- <div class="note">Trên ảnh, mỗi câu khoanh một vòng tại đáp án đúng. Xanh lá: tô đúng · Đỏ: tô sai · Vàng: bỏ trống, tô nhiều ô hoặc tô mờ Mã đề và SBD máy đọc được khoanh xanh lá.</div>
+ <div class="note">Trên ảnh, mỗi câu khoanh một vòng tại đáp án đúng. Xanh lá: tô đúng · Đỏ: tô sai · Vàng: tô mờ nghi ngờ hoặc tô nhiều ô (chưa cộng điểm). Bỏ trống khoanh đỏ. Mã đề và SBD máy đọc được khoanh xanh lá.</div>
  <div class="lbl">Sửa thông tin máy đọc</div>
  <div class="grid2"><label class="f">Họ và tên${!r.name&&!r.nameManual&&r.nameAI?' (AI đọc)':''}<input class="in" id="rName" value="${esc(dn(r))}" placeholder="${r.name?'':'Nhập tay nếu chưa có'}"></label><label class="f">Lớp<input class="in" id="rLop" value="${esc(dl(r))}" maxlength="20"></label></div>
  <div class="grid2"><label class="f">Số báo danh<input class="in num" id="rSbd" value="${esc(/^\d+$/.test(r.ans.sbd)?r.ans.sbd:'')}" placeholder="Bỏ trống nếu không dùng SBD" inputmode="numeric" maxlength="6"></label><label class="f">Mã đề<input class="in num" id="rMade" value="${esc(r.ans.made)}" inputmode="numeric" maxlength="${e.madeLen||3}"></label></div>
@@ -3057,6 +3083,8 @@ V.result=async(p)=>{
  <button class="btn danger" id="rDel">Xóa bài này</button>`,
  async after(){
   const c=await renderGraded(e,r);const t=$('#rImg');if(c&&t){t.width=c.width;t.height=c.height;t.getContext('2d').drawImage(c,0,0);}
+  document.querySelectorAll('[data-acc]').forEach(cb=>cb.onchange=async()=>{const nm=cb.dataset.acc,acc=new Set(r.ans.acc||[]);if(cb.checked)acc.add(nm);else acc.delete(nm);r.ans.acc=[...acc];
+   r.score=grade(e,r.ans);const all=await DB.byExam(e.id);r.issues=issuesOf(e,r,all.map(o=>o.id===r.id?r:o));await DB.put('results',r);toast(cb.checked?'Đã cộng điểm câu này':'Đã bỏ cộng điểm');replace('result',{id:e.id,rid:r.id});});
   const toR=id=>()=>replace('result',{id:e.id,rid:id});
   if($('#rPrev'))$('#rPrev').onclick=toR(prevId);if($('#rNext'))$('#rNext').onclick=toR(nextId);
   const zoomNav=()=>({prev:prevId?()=>{replace('result',{id:e.id,rid:prevId,zoom:1});}:null,next:nextId?()=>{replace('result',{id:e.id,rid:nextId,zoom:1});}:null});
