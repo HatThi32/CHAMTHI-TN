@@ -1382,10 +1382,9 @@ function drawOverlay(ctx,ex,res){
  const L=lay(resLayKey(ex,res)),K=ctx.canvas.width/L.F.W,key=ex.keys[res.ans.made],a=res.ans,off=res.offs||[];
  const P=b=>{const o=off[b.b]||[0,0];return[(b.x+o[0])*K,(b.y+o[1])*K]};
  // vòng mảnh (≈0,4 mm), màu tươi, ôm sát ngoài viền ô
- // vòng neon: lớp sáng tỏa nhẹ quanh vòng + nét chính mảnh, màu rực
- const ring=(b,col)=>{const[x,y]=P(b),r=RB*(res.rs||1)*K*1.32;ctx.save();ctx.strokeStyle=col;ctx.shadowColor=col;ctx.shadowBlur=1.6*K;ctx.lineWidth=0.5*K;
-  ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.stroke();ctx.shadowBlur=0;ctx.lineWidth=0.38*K;ctx.stroke();ctx.restore();};
- const G='#00f05a',RD='#ff0a3c',YE='#ffcc00',BL='#1e90ff';
+ // vòng màu sáng phủ đúng lên viền đen của ô (như app Chấm Thi 2025): nét mảnh, không tỏa sáng
+ const ring=(b,col)=>{const[x,y]=P(b);ctx.strokeStyle=col;ctx.lineWidth=0.42*K;ctx.beginPath();ctx.arc(x,y,RB*(res.rs||1)*K*1.02,0,Math.PI*2);ctx.stroke();};
+ const G='#33ff33',RD='#ff2626',YE='#ffe600',BL='#1e90ff';
  L.made.forEach((c,j)=>{const d=parseInt((a.madeRaw||a.made)[j]);if(d>=0)ring(c[d],G);});
  L.sbd.forEach((c,j)=>{const d=parseInt(a.sbd[j]);if(d>=0)ring(c[d],G);});
  // Mỗi câu một vòng tại ĐÁP ÁN ĐÚNG: xanh = tô đúng; vàng = tô mờ nghi ngờ hoặc tô 2 ô trở lên; đỏ = tô sai hoặc bỏ trống
@@ -1841,7 +1840,7 @@ function showKeyQR(e){
 /* ---------- Mã QR tra điểm cho học sinh ---------- */
 function appBase(){try{const v=localStorage.getItem('ct_base');if(v)return v;}catch(e){}
  if(/^https?:$/.test(location.protocol)&&!/claude\.(ai|site|com)|claudeusercontent|androidplatform\.net|localhost/.test(location.hostname))return location.origin+location.pathname;return DEFAULT_BASE;}
-const BUILD='18/11/2026 14:42';
+const BUILD='18/11/2026 14:50';
 const DEFAULT_BASE='https://hatthi32.github.io/CHAMTHI-TN/';
 const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const unb64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
