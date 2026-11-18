@@ -2061,7 +2061,7 @@ async function startLive(e){
   let area=0;for(let i=0;i<4;i++){const a=m[i],b=m[(i+1)%4];area+=a[0]*b[1]-b[0]*a[1];}area=Math.abs(area)/2;
   const h=(top+bot)/2,v=(lef+rig)/2,asp=Math.max(h,v)/Math.min(h,v);
   return{area,par:Math.max(top/bot,bot/top,lef/rig,rig/lef),asp};};
- let pendFp=null,agreeTries=0,unsureTries=0,lostSince=0;
+ let pendFp=null,agreeTries=0,unsureTries=0,lostSince=0,dupFp=null,dupSince=0;
  const capture=async(hintN,force)=>{busy=true;await new Promise(r=>setTimeout(r,0));
   try{const vw=video.videoWidth,vh=video.videoHeight,k=Math.min(1,1440/Math.max(vw,vh)),full=document.createElement('canvas');full.width=Math.round(vw*k);full.height=Math.round(vh*k);full.getContext('2d').drawImage(video,0,0,full.width,full.height);
    let A=analyzeCanvas(full,e,hintN?hintN.map(p=>[p[0]*full.width,p[1]*full.height,p[2]*full.width]):null);msgUntil=0;
@@ -2069,7 +2069,12 @@ async function startLive(e){
    if(A.error){pendFp=null;const now=performance.now();if(now-lastErrTone>2500)flash(A.error.split('. ')[0]+'.','err',1800);if(now-lastErrTone>3000){tone([330,250],0.14);buzz([60,60,60]);lastErrTone=now;}coolUntil=now+500;stable=0;busy=false;return;}
    const fp=fpOf(A.ans);
    session.fps=session.fps||new Set();
-   if((needLost&&fp===lastFp)||session.fps.has(fp)){recheckAt=performance.now()+900;pendFp=null;if(fp!==lastFp)flash('Phiếu này đã chấm rồi','ok',900);busy=false;return;}
+   if(needLost&&fp===lastFp){recheckAt=performance.now()+900;pendFp=null;busy=false;return;}
+   // Phiếu trùng với bài đã chấm trước đó: báo, nhưng nếu giáo viên vẫn giữ phiếu trước camera quá 1 giây thì chấm tiếp
+   //(hai học sinh có thể tô giống hệt nhau, hoặc giáo viên muốn chấm lại)
+   if(session.fps.has(fp)&&!force){const t=performance.now();if(dupFp!==fp){dupFp=fp;dupSince=t;}
+    if(t-dupSince<1000){recheckAt=t+350;coolUntil=t+350;pendFp=null;flash('Phiếu này đã chấm rồi · giữ yên thêm 1 giây để chấm lại','ok',1100);busy=false;return;}}
+   dupFp=null;
    const now2=performance.now();
    unsureTries=0;
    // Chỉ lưu khi hai lần đọc liên tiếp cho kết quả giống hệt nhau
@@ -2115,7 +2120,7 @@ async function startLive(e){
     lostSince=0;setSt('');
     drawGuide(GD,hit);
     if(stable>=1&&now>coolUntil&&(!needLost||now>recheckAt)){await capture(hit.map(c=>[c.x/W,c.y/H,Math.sqrt(c.a)/W]));if(!running)return;}
-   }else{lastHits=null;stable=0;if(n===0){lost++;if(lost>=3)needLost=false;}else lost=0;
+   }else{lastHits=null;stable=0;if(n===0){lost++;if(lost>=3){needLost=false;dupFp=null;}}else lost=0;
     if(!lostSince)lostSince=now;setSt(now-lostSince>1500?'Đưa 4 ô vuông đen vào 4 khung':'');drawGuide(GD,hit);}
   }
   }catch(err){busy=false;stable=0;}
