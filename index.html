@@ -2539,6 +2539,9 @@ async function xdSheetPng(tpl,code,subj){const L=lay(tpl),F=L.F,K=10,c=document.
   const y0=col[0].y,cy=L.madeW&&L.madeW[j]?L.madeW[j].y:half?y0-7.75:y0-8.5;x.font=`700 ${Math.round(4.2*K)}px "Be Vietnam Pro",Arial,sans-serif`;x.textAlign='center';x.textBaseline='middle';x.fillText(d,b.x*K,cy*K+K*0.2);});
  if(!half&&subj){const sy=L.rb?F.MK[0][1]+4+10.8:36.1;x.font=`500 ${Math.round(3.2*K)}px "Be Vietnam Pro",Arial,sans-serif`;x.textAlign='left';x.textBaseline='alphabetic';x.fillStyle='#111';x.fillText(subj,(L.rb?25:25)*K,(sy-0.5)*K);}
  return new Uint8Array(await (await new Promise(r=>c.toBlob(r,'image/png'))).arrayBuffer());}
+// Dòng "Họ và tên: …… Lớp: …… SBD: ……" của đề gốc: bỏ, vì phiếu trả lời đã có các ô này
+const XD_NAMELINE=/(h[ọo]\s*(v[àa]|,)?\s*t[êe]n|t[êe]n\s*(h[ọo]c|th[íi])\s*sinh|s[ốo]\s*b[áa]o\s*danh|\bSBD|\bl[ớo]p)\s*(th[íi]\s*sinh|h[ọo]c\s*sinh)?\s*:?\s*[.…_]{3,}/i;
+const xdIsNameLine=n=>{const t=(isW(n,'p')?pText(n):[...n.getElementsByTagNameNS(WNS,'p')].map(pText).join(' ')).trim();return t.length<260&&XD_NAMELINE.test(t)&&!/^c[âa]u\s*\d/i.test(t);};
 async function xdBuildDocx(D,X,code,opt,sheet){
  const doc=D.doc.cloneNode(true);
  const imp=n=>doc.importNode(n,true);const body=doc.getElementsByTagNameNS(WNS,'body')[0];while(body.firstChild)body.removeChild(body.firstChild);
@@ -2552,15 +2555,15 @@ async function xdBuildDocx(D,X,code,opt,sheet){
  const plan=xdPlan(X,code,opt);const cont=X.parts.filter(p=>p.kind!==4).every((P,i)=>!i||!P.qs.length||P.qs[0].num!==1);
  let gnum=0,pi=0;const W=STD.tw,IND=0;
  for(const{P,items}of plan){const px=partXml(P,pi++,items.length,cont?gnum+1:1);
-  if(px)addXml(px);else{for(const n of P.title)if(n)add(stdP(D.doc,n,{before:120,keep:true}));}
-  if(P.kind===4)for(const n of P.intro)if(!emptyP(n))add(stdP(D.doc,n,{}));
+  if(px)addXml(px);else{for(const n of P.title)if(n&&!xdIsNameLine(n))add(stdP(D.doc,n,{before:120,keep:true}));}
+  if(P.kind===4)for(const n of P.intro)if(!emptyP(n)&&!xdIsNameLine(n))add(stdP(D.doc,n,{}));
   let k=0;
   for(const it of items){const q=it.q;k++;const num=cont&&P.kind!==4?++gnum:k;
    if(it.g){for(const n of it.g.intro){let p=n.cloneNode(true);const t=pText(p),m=t.match(RX.group);if(m&&isW(p,'p')){const len=it.g.qs.length;p=editP(D.doc,p,m.index,m.index+m[0].length,m[0].replace(/\d+/,String(num)).replace(/(\d+)(?!.*\d)/,String(num+len-1)));}add(stdP(D.doc,p,{before:60}));}}
    q.stem.forEach((n,i)=>{if(i>0&&emptyP(n))return;let p=i===0&&P.kind!==4?stdLabel(D.doc,n,num):n;add(stdP(D.doc,p,{before:i===0?80:20}));});
    if(P.kind===1){const ord=it.opts||q.opts;for(const n of stdOpts(D.doc,q,ord))add(n);}
    if(P.kind===2){const ord=it.stms||q.stms;ord.forEach((s,i)=>{const p=mkP(D.doc,null,[mkRun(D.doc,'abcd'[i]+') ',null,false),...s.nodes.map(n=>s.marked?unmark(n):n.cloneNode(true))]);add(stdP(D.doc,p,{ind:283,hang:0,before:20}));for(const e of s.extra||[])if(!emptyP(e))add(stdP(D.doc,s.marked?unmark(e):e,{ind:283}));});}
-   for(const n of q.tail)if(!emptyP(n))add(stdP(D.doc,n,{}));}}
+   for(const n of q.tail)if(!emptyP(n)&&!xdIsNameLine(n))add(stdP(D.doc,n,{}));}}
  addXml(wp(wr('------------------------ HẾT ------------------------',{b:true}),{jc:'center',before:240}));
  addXml(wp(wr('- Thí sinh không được sử dụng tài liệu;  - Cán bộ coi thi không giải thích gì thêm.',{i:true,sz:22}),{jc:'center',before:60}));
  addXml(`<w:sectPr><w:footerReference w:type="default" r:id="rIdXdFtr"/><w:pgSz w:w="${STD.pw}" w:h="${STD.ph}"/><w:pgMar w:top="${STD.mt}" w:right="${STD.mr}" w:bottom="${STD.mb}" w:left="${STD.ml}" w:header="425" w:footer="425" w:gutter="0"/><w:cols w:space="720"/></w:sectPr>`);
