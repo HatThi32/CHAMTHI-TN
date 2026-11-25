@@ -126,6 +126,7 @@ input.in:focus,select.in:focus,textarea.in:focus{outline:2px solid var(--accent)
 .qc.g{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}.qc.r{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}.qc.w{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
 .q2{display:flex;flex-direction:column;gap:6px}.q2r{display:grid;grid-template-columns:52px repeat(4,minmax(0,1fr)) auto;gap:6px;align-items:center}.q2r>.n{font-size:13px;font-weight:700}.q2r .pt{font-size:12px;color:var(--muted);white-space:nowrap}
 .qlg{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.qlg .qc{min-height:0;padding:3px 10px;flex-direction:row}.qlg .qc b{font-size:12px;font-weight:700}
+.xdprev img{display:block;width:100%;margin-top:10px;border:1px solid var(--line);border-radius:8px;background:#fff}
 .pend .prow{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}.pend .prow input{width:22px;height:22px;accent-color:var(--accent)}.pend .pl{font-weight:600;font-size:14px}.pend{border-left:4px solid #ffc400}
 .vw .vnav{position:absolute;bottom:14px;z-index:3;width:52px;height:52px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;display:grid;place-items:center;box-shadow:0 2px 8px rgba(0,0,0,.4)}.vw .vnav svg{width:28px;height:28px}.vw .vp{left:14px}.vw .vn{right:14px}.vw .vnav:disabled{opacity:.25}
 .vw .zt{gap:8px}.vw .vhd{flex:1;display:flex;flex-direction:column;min-width:0;line-height:1.2}.vw .vhd b{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.vw .vhd span{font-size:12.5px;color:rgba(255,255,255,.7)}
@@ -2870,7 +2871,10 @@ V.shuffle=async()=>{
   after(){$('#xdPick').onclick=()=>pickFile('fDe',f=>xdLoad(f[0]));}};
  const X=XDS.X,cnt=xdCounts(),subj=xdSubject();
  const fits=id=>TPLS[id].p1>=cnt[0]&&TPLS[id].p2>=cnt[1]&&TPLS[id].p3>=cnt[2];const ok=OWN_IDS.filter(fits);
- const defT=subj.sub&&fits(subj.sub)?subj.sub:!cnt[2]&&fits('tx')?'tx':ok[0]||'tong';
+ // Mẫu phù hợp nhất: đủ chỗ cho số câu của đề, tốn ít giấy nhất; bằng nhau thì ưu tiên mẫu đúng môn, rồi mẫu ít ô thừa nhất
+ const spare=id=>(TPLS[id].p1-cnt[0])+(TPLS[id].p2-cnt[1])*4+(TPLS[id].p3-cnt[2])*4;
+ const best=ok.slice().sort((a,b)=>lay(a).F.H-lay(b).F.H||(b===subj.sub)-(a===subj.sub)||spare(a)-spare(b))[0];
+ const defT=best||'';
  const keyIn=(P,q,i)=>{const v=q.key||'';const ph=P.kind===1?'A–D':P.kind===2?'ĐSĐS':'số';
   return`<label class="xk${v?'':' miss'}"><span>${i+1}</span><input data-pi="${X.parts.indexOf(P)}" data-qi="${i}" value="${esc(v)}" placeholder="${ph}" maxlength="${P.kind===3?8:P.kind===2?4:1}" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-label="Đáp án câu ${i+1}"></label>`;};
  const parts=X.parts.map(P=>`<div class="xdp"><div class="xdh"><b>${XD_KN[P.kind]}</b><span>${P.qs.length} câu${P.kind<4?` · có đáp án ${P.qs.filter(q=>q.key).length}/${P.qs.length}`:''}</span></div>
@@ -2890,8 +2894,9 @@ V.shuffle=async()=>{
   <label class="row ck"><input type="checkbox" id="xdOpts" checked><span>Đảo phương án A, B, C, D <span class="note">(câu có "Cả A và B…", "Tất cả…" tự giữ nguyên)</span></span></label>
   <label class="row ck"><input type="checkbox" id="xdStms" ${XDS.ext==='pdf'?'disabled':'checked'}><span>Đảo ý a, b, c, d của câu Đúng/Sai ${XDS.ext==='pdf'?'<span class="note">(đề PDF giữ nguyên thứ tự ý)</span>':''}</span></label></div>
  <div class="card"><div class="lbl">Phiếu trả lời chèn vào đề</div>
-  <select class="in" id="xdTpl" aria-label="Mẫu phiếu trả lời">${ok.map(id=>`<option value="${id}"${id===defT?' selected':''}>Mẫu ${TPLS[id].code} · ${esc(TPLS[id].short)}</option>`).join('')}<option value="">Không chèn phiếu</option></select>
-  <div class="note" id="xdPosNote"></div>
+  ${defT?`<div class="okbox" id="xdAuto">App tự chọn <b>Mẫu ${TPLS[defT].code} · ${esc(TPLS[defT].short)}</b>: vừa đủ ${[cnt[0]?cnt[0]+' câu Phần I':'',cnt[1]?cnt[1]+' câu Phần II':'',cnt[2]?cnt[2]+' câu Phần III':''].filter(Boolean).join(', ')} của đề và tốn ít giấy nhất. Mỗi mã đề được gắn phiếu đã tô sẵn mã đề.</div>`:''}
+  <label class="f">Muốn dùng mẫu khác thì chọn ở đây<select class="in" id="xdTpl" aria-label="Mẫu phiếu trả lời">${OWN_IDS.map(id=>`<option value="${id}"${id===defT?' selected':''}${fits(id)?'':' disabled'}>Mẫu ${TPLS[id].code} · ${esc(TPLS[id].short)}${id===defT?' (nên dùng)':fits(id)?'':' (không đủ ô)'}</option>`).join('')}<option value="">Không chèn phiếu</option></select></label>
+  <div class="note" id="xdPosNote"></div><div class="xdprev" id="xdPrev"></div>
   ${!ok.length?'<div class="warnbox">Số câu vượt sức chứa các mẫu phiếu (tối đa 40; 8; 6) nên không chèn được phiếu.</div>':''}</div>
  <button class="btn pri" id="xdGo" style="min-height:60px;font-size:18.5px">Tạo các mã đề và tải về</button>
  <div id="xdOut"></div>`,
@@ -2900,7 +2905,9 @@ V.shuffle=async()=>{
    if(P.kind===1){v=v.toUpperCase().replace(/[^ABCD]/g,'').slice(0,1);inp.value=v;}else if(P.kind===2){const raw=v.toUpperCase().replace(/D/g,'Đ').replace(/[^ĐS]/g,'').slice(0,4);inp.value=raw;v=raw.length===4?raw:'';}
    q.key=v||null;if(v)q.src=q.src||'nhập tay';inp.parentNode.classList.toggle('miss',!v);}));
   const sel=$('#xdTpl');const syncPos=()=>{const t=sel.value;$('#xdPosNote').textContent=!t?'':!smallF(lay(t).F)?'Phiếu này cao gần trọn trang A4 nên đặt thành trang 1, câu hỏi bắt đầu từ trang 2.':'Phiếu gọn: đặt ở phần trên trang 1, ngay dưới tiêu đề đề thi.';};
-  sel.onchange=syncPos;syncPos();
+  let pv=0;const prev=async()=>{const t=sel.value,my=++pv,box=$('#xdPrev');if(!t){box.innerHTML='';return;}
+   try{const png=await xdSheetPng(t,'101',subj.name);if(my!==pv)return;const u=URL.createObjectURL(new Blob([png],{type:'image/png'}));box.innerHTML=`<img src="${u}" alt="Xem trước Mẫu ${TPLS[t].code}">`;}catch(e){box.innerHTML='';}};
+  sel.onchange=()=>{syncPos();prev();const a=$('#xdAuto');if(a)a.hidden=sel.value!==defT;};syncPos();prev();
   $('#xdGo').onclick=()=>xdGenerate(subj);}};
 };
 async function xdGenerate(subj){
