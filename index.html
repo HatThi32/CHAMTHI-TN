@@ -1165,7 +1165,7 @@ function pxAt(R,x,y){const u=Math.round(x*R.K),v=Math.round(y*R.K);if(u<0||v<0||
 const RING=(()=>{const a=[];for(const rr of [RB-0.1,RB+0.1])for(let i=0;i<12;i++){const t=i*Math.PI/6;a.push([rr*Math.cos(t),rr*Math.sin(t)]);}return a;})();
 function ringDark(R,x,y,s=1){let t=0;const K=R.K,W=R.W,Hh=R.H,g=R.g;for(const p of RING){const u=Math.round((x+p[0]*s)*K),v=Math.round((y+p[1]*s)*K);t+=(u<0||v<0||u>=W||v>=Hh)?0:255-g[v*W+u];}return t*1.5;}
 function readFills(R,L){
- const offs=[],fills=new Map(),ringC=new Map(),quality=[],paperL=new Map();
+ const offs=[],fills=new Map(),ringC=new Map(),quality=[],paperL=new Map(),hotF=new Map();
  // Phiếu in từ nơi khác (QM): cỡ ô tròn có thể khác chút ít, tự dò bán kính viền ô trên chính ảnh
  let rs=L.rb?L.rb/RB:1;if(L.F.marks){let bestS=-1;for(const s of [0.8,0.86,0.92,0.98,1.04,1.1,1.16,1.22]){let tot=0;
    for(const bs of L.blocks){let m=0;for(let dx=-1.5;dx<=1.501;dx+=0.5)for(let dy=-1.5;dy<=1.501;dy+=0.5){let t=0;for(const b of bs)t+=ringDark(R,b.x+dx,b.y+dy,s);if(t>m)m=t;}tot+=m;}
@@ -1196,11 +1196,15 @@ function readFills(R,L){
     for(let v=Math.round(py-1);v<=Math.round(py+1);v++)for(let u=Math.round(px-1);u<=Math.round(px+1);u++)if(u>=0&&v>=0&&u<R.W&&v<R.H){s2+=R.g[v*R.W+u];c2++;}lw.push(c2?s2/c2:white);}
    lw.sort((a,b)=>a-b);paperL.set(b,(lw[2]+lw[3])/2);const we=Math.max(40,Math.min(white,(lw[2]+lw[3])/2));
    ringC.set(b,(white-(255-bvv/36))/white);
-   const innerAt=(cx,cy)=>{let t=0,m=0;for(let v=Math.floor(cy-rin);v<=Math.ceil(cy+rin);v++)for(let u=Math.floor(cx-rin);u<=Math.ceil(cx+rin);u++){if((u-cx)**2+(v-cy)**2>rin*rin||u<0||v<0||u>=R.W||v>=R.H)continue;t+=R.g[v*R.W+u];m++;}return m?t/m:255;};
+   // Chì tô bóng phản chiếu đèn: điểm ảnh SÁNG HƠN cả giấy xung quanh chỉ có thể là ánh đèn hắt lại (chì/mực không thể sáng hơn giấy)
+   // → bỏ các điểm đó, đo độ đậm bằng phần còn lại của ô. Ô bị chói gần hết (hot ≥ 50%) coi là chưa đọc được.
+   const pb=Math.max(we,white),hotT0=pb+Math.max(10,pb*0.05),hotT=hotT0>252?999:hotT0;let hot=0;
+   const innerAt=(cx,cy)=>{let t=0,m=0,t2=0,m2=0;for(let v=Math.floor(cy-rin);v<=Math.ceil(cy+rin);v++)for(let u=Math.floor(cx-rin);u<=Math.ceil(cx+rin);u++){if((u-cx)**2+(v-cy)**2>rin*rin||u<0||v<0||u>=R.W||v>=R.H)continue;const g=R.g[v*R.W+u];t+=g;m++;if(g<=hotT){t2+=g;m2++;}}
+    if(!m)return 255;const hf=(m-m2)/m;if(hf>hot)hot=hf;return m2>=m*0.3?t2/m2:t/m;};
    // ô tô lệch/không kín (gạch chéo, chấm nhỏ) có thể kéo vị trí tinh chỉnh lệch khỏi tâm: đo cả ở vị trí theo khối, lấy chỗ đậm hơn
-   const inner=Math.min(innerAt(cx,cy),bx!==best[0]||by!==best[1]?innerAt((b.x+best[0])*K,(b.y+best[1])*K):255);fills.set(b,Math.max(0,Math.min(1,(we-inner)/we)));}
+   const inner=Math.min(innerAt(cx,cy),bx!==best[0]||by!==best[1]?innerAt((b.x+best[0])*K,(b.y+best[1])*K):255);fills.set(b,Math.max(0,Math.min(1,(we-inner)/we)));hotF.set(b,hot);}
  });
- return{offs,fills,ringC,quality,rs,paperL};
+ return{offs,fills,ringC,quality,rs,paperL,hotF};
 }
 // Quyết định cho một nhóm ô (một câu / một cột số), dùng độ đậm ĐÃ TRỪ nền (chữ in mờ trong ô):
 // so sánh tương đối trong nhóm nên tô nhạt, tô không kín, chấm nhỏ vẫn nhận; vết tẩy mờ hơn hẳn ô tô thì bỏ qua.
@@ -1237,7 +1241,7 @@ function deriveMade(raw,len,keys){raw=String(raw||'');if(len>=raw.length)return 
 // Tỉ lệ dài/rộng của 4 ô định vị phải gần đúng khổ phiếu (các khổ phiếu khác nhau rõ về tỉ lệ) → tránh nhận nhầm khổ
 function aspectOk(d,F){const D=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);const hz=D(d[0],d[1])+D(d[3],d[2]),vt=D(d[0],d[3])+D(d[1],d[2]);if(!vt)return false;
  const r=(hz/vt)/((F.MK[1][0]-F.MK[0][0])/(F.MK[3][1]-F.MK[0][1]));return r>0.76&&r<1.32;}
-function analyzeCanvas(cv,ex,hint){const wantTpl=ex?ex.tpl:null;
+function analyzeCanvas(cv,ex,hint,fuse){const wantTpl=ex?ex.tpl:null;
  const w=cv.width,h=cv.height,ctx=cv.getContext('2d',{willReadFrequently:true}),id=ctx.getImageData(0,0,w,h),g=toGray(id.data);
  const m0=hint?refineMarkers(g,w,h,hint):findMarkers(g,w,h);
  // tính thêm các bộ 4 ô dự phòng chỉ khi bộ đầu tiên không khớp (tiết kiệm thời gian khi quét liên tục)
@@ -1255,10 +1259,10 @@ function analyzeCanvas(cv,ex,hint){const wantTpl=ex?ex.tpl:null;
  // Đọc ô tô trên kênh màu đỏ: mực xanh/đen và bút chì đậm rõ, nét bút đỏ chấm bài của giáo viên gần như biến mất
  const gr=new Uint8Array(w*h);for(let i=0,j=0;i<gr.length;i++,j+=4)gr[i]=id.data[j];
  const R=warpGray(gr,w,h,H,5,F);let L=lay(lk),lv=0;
- let {offs,fills,ringC,quality,rs,paperL}=readFills(R,L);
+ let {offs,fills,ringC,quality,rs,paperL,hotF}=readFills(R,L);
  // Mẫu 1/2: thử cả bố cục cũ, lấy bố cục có viền ô tròn Phần I khớp rõ hơn
  if(LAYS[lk].alt){const L0=lay(LAYS[lk].alt),r0=readFills(R,L0);const md=(LL,rc)=>{const v=LL.p1.flat().map(b=>rc.get(b)).sort((a,b)=>a-b);return v[v.length>>1]||0;};
-  if(md(L0,r0.ringC)>md(L,ringC)*1.15){L=L0;lv=1;lk=LAYS[lk].alt;({offs,fills,ringC,quality,rs,paperL}=r0);}}
+  if(md(L0,r0.ringC)>md(L,ringC)*1.15){L=L0;lv=1;lk=LAYS[lk].alt;({offs,fills,ringC,quality,rs,paperL,hotF}=r0);}}
  // 1) ánh sáng & lóa: viền ô tròn phải thấy rõ ở mọi ô cần đọc
  const usedB=[];L.blocks.forEach((bs,bi)=>{if(bs.some(b=>usedBubble(ex,b)))usedB.push(bi);});
  const whites=usedB.map(bi=>quality[bi].white).sort((a,b)=>a-b),medW=whites[whites.length>>1]||255;
@@ -1269,14 +1273,26 @@ function analyzeCanvas(cv,ex,hint){const wantTpl=ex?ex.tpl:null;
  if(medC<0.05)return{error:'Ảnh bị nhòe hoặc mờ, máy không thấy rõ các ô tròn. Giữ điện thoại chắc tay, đưa lại gần phiếu hơn và chụp nơi đủ sáng.',quality:true};
  const cmin=Math.max(0.04,Math.min(CMIN,medC*0.4));
  const pwAll=[];for(const bi of usedB)for(const b of L.blocks[bi])if(usedBubble(ex,b))pwAll.push(paperL.get(b));pwAll.sort((a,b)=>a-b);const medPW=pwAll[pwAll.length>>1]||255,bright=b=>{const pw=paperL.get(b);return pw-medPW>=Math.max(10,medPW*0.06)||pw>=250;};
- let nBright=0,nBad=0;for(const bi of usedB){for(const b of L.blocks[bi]){if(!usedBubble(ex,b))continue;const c=ringC.get(b);if(c<cmin&&fills.get(b)<0.3){const nm=qName(b);bad.set(nm,(bad.get(nm)||0)+1);nBad++;if(bright(b))nBright++;}}}
+ // Ô bị chói ở khung hình này: viền ô bạc đi dưới vùng giấy sáng gắt, hoặc phần lớn lòng ô sáng hơn giấy (chì bóng hắt đèn)
+ const glared=b=>hotF.get(b)>=0.5||ringC.get(b)<cmin||(bright(b)&&ringC.get(b)<medC*0.65);
+ // Ghép nhiều khung hình khi quét liên tục: vệt chói di chuyển khi điện thoại nghiêng, vết tô thì không.
+ // Mỗi ô chỉ dùng lần đọc ở khung hình mà ô đó KHÔNG bị chói; đủ mọi ô sạch mới chấm → không bao giờ chấm theo ô bị chói.
+ let fused=0;const fz=new Set();
+ if(fuse){if(fuse.lk!==lk||!fuse.obs){fuse.lk=lk;fuse.obs=new Map();}
+  // kiểm tra vẫn là cùng một tờ phiếu: các ô sạch ở cả hai lần phải cho cùng độ đậm
+  let cmp=0,diff=0;for(const bi of usedB)for(const b of L.blocks[bi]){const o=fuse.obs.get(b);if(!o||glared(b))continue;cmp++;if(Math.abs(o.f-fills.get(b))>0.22)diff++;}
+  if(diff>Math.max(2,cmp*0.04))fuse.obs=new Map();
+  for(const bi of usedB)for(const b of L.blocks[bi]){if(!glared(b)){fuse.obs.set(b,{f:fills.get(b)});continue;}
+   const o=fuse.obs.get(b);if(o){fills.set(b,o.f);fz.add(b);fused++;}}}
+ let nBright=0,nBad=0;for(const bi of usedB){for(const b of L.blocks[bi]){if(!usedBubble(ex,b)||fz.has(b))continue;const c=ringC.get(b);if(c<cmin&&fills.get(b)<0.3){const nm=qName(b);bad.set(nm,(bad.get(nm)||0)+1);nBad++;if(bright(b))nBright++;}}}
  if(bad.size){const glare=nBright>=Math.max(1,nBad*0.4)||usedB.some(bi=>quality[bi].sat>0.12);const names=[...bad.keys()];
   return glare?{error:`Phiếu bị chói đèn ở ${names.length>5?names.slice(0,5).join(', ')+'…':names.join(', ')}. Nghiêng nhẹ phiếu hoặc điện thoại, hoặc che bớt đèn cho hết vệt sáng rồi quét lại.`,quality:true,glare:true,badList:names}:{error:`Không đọc rõ ${names.length>6?names.slice(0,6).join(', ')+'… ('+names.length+' chỗ)':names.join(', ')} vì ảnh bị mờ hoặc thiếu sáng. Giữ máy chắc tay, thêm ánh sáng rồi chụp lại.`,quality:true,badList:names};}
  // 2) chói đèn (đèn huỳnh quang phản chiếu): vùng giấy sáng gắt hơn hẳn phần còn lại và viền ô ở đó bị bạc đi.
  //    Ô tô dưới vùng chói trông nhạt hơn thật → có thể chấm sai, nên báo và KHÔNG chấm.
  {const gl=new Map();
-  for(const bi of usedB)for(const b of L.blocks[bi]){if(!usedBubble(ex,b))continue;const pw=paperL.get(b),c=ringC.get(b);
-   if((pw-medPW>=Math.max(10,medPW*0.06)||pw>=250)&&c<medC*0.65){const nm=qName(b);gl.set(nm,(gl.get(nm)||0)+1);}}
+  for(const bi of usedB)for(const b of L.blocks[bi]){if(!usedBubble(ex,b)||fz.has(b))continue;const pw=paperL.get(b),c=ringC.get(b);
+   if((pw-medPW>=Math.max(10,medPW*0.06)||pw>=250)&&c<medC*0.65){const nm=qName(b);gl.set(nm,(gl.get(nm)||0)+1);}
+   else if(hotF.get(b)>=0.5){const nm=qName(b);gl.set(nm,(gl.get(nm)||0)+3);}}
   const nG=[...gl.values()].reduce((a,b)=>a+b,0);
   if(nG>=3){const names=[...gl.keys()];return{error:`Phiếu bị chói đèn ở ${names.length>5?names.slice(0,5).join(', ')+'…':names.join(', ')}. Nghiêng nhẹ phiếu hoặc điện thoại, hoặc che bớt đèn cho hết vệt sáng rồi quét lại.`,quality:true,glare:true,badList:names};}}
  // Trừ nền: ô trống có chữ in mờ bên trong (A, B, 0–9…) nên mỗi loại chữ có độ đậm nền riêng; lấy mức thấp (15%) của cùng loại trên chính phiếu (Phần II có thể một nửa số ô Đ/S đã tô)
@@ -2062,11 +2078,13 @@ async function startLive(e){
   let area=0;for(let i=0;i<4;i++){const a=m[i],b=m[(i+1)%4];area+=a[0]*b[1]-b[0]*a[1];}area=Math.abs(area)/2;
   const h=(top+bot)/2,v=(lef+rig)/2,asp=Math.max(h,v)/Math.min(h,v);
   return{area,par:Math.max(top/bot,bot/top,lef/rig,rig/lef),asp};};
- let pendFp=null,agreeTries=0,unsureTries=0,lostSince=0,dupFp=null,dupSince=0;
+ let pendFp=null,agreeTries=0,unsureTries=0,lostSince=0,dupFp=null,dupSince=0,fuse={};
  const capture=async(hintN,force)=>{busy=true;await new Promise(r=>setTimeout(r,0));
   try{const vw=video.videoWidth,vh=video.videoHeight,k=Math.min(1,1440/Math.max(vw,vh)),full=document.createElement('canvas');full.width=Math.round(vw*k);full.height=Math.round(vh*k);full.getContext('2d').drawImage(video,0,0,full.width,full.height);
-   let A=analyzeCanvas(full,e,hintN?hintN.map(p=>[p[0]*full.width,p[1]*full.height,p[2]*full.width]):null);msgUntil=0;
+   let A=analyzeCanvas(full,e,hintN?hintN.map(p=>[p[0]*full.width,p[1]*full.height,p[2]*full.width]):null,fuse);msgUntil=0;
    if(A.error&&!A.quality){msgUntil=0;stable=0;pendFp=null;busy=false;if(force)flash(A.error,'err',3500);return;}
+   // chói đèn: không dừng hẳn mà chụp tiếp nhanh để ghép — mỗi lần điện thoại nghiêng đi, vệt chói dời chỗ, app nhặt thêm các ô đã nhìn rõ
+   if(A.glare){pendFp=null;flash('Bị chói đèn · nghiêng nhẹ điện thoại, app đang ghép ảnh','err',1200);coolUntil=performance.now()+150;stable=0;busy=false;return;}
    if(A.error){pendFp=null;const now=performance.now();if(now-lastErrTone>2500)flash(A.error.split('. ')[0]+'.','err',1800);if(now-lastErrTone>3000){tone([330,250],0.14);buzz([60,60,60]);lastErrTone=now;}coolUntil=now+500;stable=0;busy=false;return;}
    const fp=fpOf(A.ans);
    session.fps=session.fps||new Set();
@@ -2085,7 +2103,7 @@ async function startLive(e){
    agreeTries=0;pendFp=null;
    if(A.unsure.length)A.flags.push('Cần kiểm tra: '+A.unsure.slice(0,8).join(', '));
    tone([1800],0.04);{const fl=document.createElement('div');fl.className='lflash';ov.appendChild(fl);setTimeout(()=>fl.remove(),260);}
-   const {res}=await saveAnalysis(e,A);session.fps.add(fp);session.count++;session.last=res;lastFp=fp;needLost=true;recheckAt=performance.now()+900;
+   fuse={};const {res}=await saveAnalysis(e,A);session.fps.add(fp);session.count++;session.last=res;lastFp=fp;needLost=true;recheckAt=performance.now()+900;
    const crit=res.issues.some(critical);
    if(crit){tone([440,300,440],0.15);buzz([200,80,200]);}
    else{tone([880,1320],0.1);buzz(80);}msgUntil=0;setSt('');
@@ -2121,7 +2139,7 @@ async function startLive(e){
     lostSince=0;setSt('');
     drawGuide(GD,hit);
     if(stable>=1&&now>coolUntil&&(!needLost||now>recheckAt)){await capture(hit.map(c=>[c.x/W,c.y/H,Math.sqrt(c.a)/W]));if(!running)return;}
-   }else{lastHits=null;stable=0;if(n===0){lost++;if(lost>=3){needLost=false;dupFp=null;}}else lost=0;
+   }else{lastHits=null;stable=0;if(n===0){lost++;if(lost>=3){needLost=false;dupFp=null;fuse={};}}else lost=0;
     if(!lostSince)lostSince=now;setSt(now-lostSince>1500?'Đưa 4 ô vuông đen vào 4 khung':'');drawGuide(GD,hit);}
   }
   }catch(err){busy=false;stable=0;}
