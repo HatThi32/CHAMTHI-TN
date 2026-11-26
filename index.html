@@ -747,9 +747,9 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
-const r2=n=>Math.round(n*100+1e-9)/100;
-const fmt=n=>n==null||!isFinite(n)?'–':r2(n).toLocaleString('vi-VN',{maximumFractionDigits:2});
-const fmt2=n=>r2(n).toFixed(2);
+const r2=n=>Math.round(n*100+1e-9)/100,r3=n=>Math.round(n*1000+1e-9)/1000;
+const fmt=n=>n==null||!isFinite(n)?'–':r3(n).toLocaleString('vi-VN',{maximumFractionDigits:3});
+const fmt2=n=>{const v=r3(n);return Math.abs(v*100-Math.round(v*100))>1e-6?v.toFixed(3):v.toFixed(2);};
 const nowStr=()=>{const d=new Date(),p=x=>String(x).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`};
 const safeName=s=>String(s||'').normalize('NFC').replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,' ').trim().slice(0,80)||'khong-ten';
 const ICON={
@@ -1171,12 +1171,27 @@ function readFills(R,L){
    for(const bs of L.blocks){let m=0;for(let dx=-1.5;dx<=1.501;dx+=0.5)for(let dy=-1.5;dy<=1.501;dy+=0.5){let t=0;for(const b of bs)t+=ringDark(R,b.x+dx,b.y+dy,s);if(t>m)m=t;}tot+=m;}
    if(tot>bestS){bestS=tot;rs=s;}}}
  const RBs=RB*rs;
+ // 1) dò độ lệch của từng khối ô (giấy cong, ống kính méo nên mỗi khối lệch một chút)
+ const search=(bs,c0,rad,step)=>{let best=[0,0],bv=-1;const sc=(dx,dy)=>{let s=0;for(const b of bs)s+=ringDark(R,b.x+dx,b.y+dy,rs);if(s>bv){bv=s;best=[dx,dy];}};
+  for(let dx=-rad;dx<=rad+1e-3;dx+=step)for(let dy=-rad;dy<=rad+1e-3;dy+=step)sc(c0[0]+dx,c0[1]+dy);
+  {const [cx0,cy0]=best;for(let dx=-0.25;dx<=0.26;dx+=0.25)for(let dy=-0.25;dy<=0.26;dy+=0.25)if(dx||dy)sc(cx0+dx,cy0+dy);}return best;};
+ L.blocks.forEach((bs,bi)=>{const b=search(bs,[0,0],2,0.5);offs[bi]=[r2(b[0]),r2(b[1])];});
+ // 2) các khối nằm trên cùng một tờ giấy nên độ lệch thay đổi liền mạch theo vị trí. Khối có nhiều ô đã tô đen
+ //    (Phần II nhỏ) có thể "bắt nhầm" viền vào vết tô và lệch hẳn đi → làm khớp theo mặt phẳng từ các khối khác rồi dò lại quanh đó.
+ if(L.blocks.length>=4){const ctr=L.blocks.map(bs=>{let x=0,y=0;for(const b of bs){x+=b.x;y+=b.y;}return[x/bs.length,y/bs.length];});
+  // khởi đầu bền vững: lấy trung vị độ lệch, chỉ các khối gần trung vị mới dùng để làm khớp
+  const med=k=>{const v=offs.map(o=>o[k]).sort((a,b)=>a-b);return v[v.length>>1];};const m0=[med(0),med(1)];
+  let use=offs.map(o=>Math.hypot(o[0]-m0[0],o[1]-m0[1])<=0.6),pred=null;if(use.filter(Boolean).length<3)use=L.blocks.map(()=>true);
+  for(let it=0;it<3;it++){const fit=k=>{// bình phương tối thiểu: off = a + b·x + c·y
+    let S=[[0,0,0],[0,0,0],[0,0,0]],V=[0,0,0];ctr.forEach(([x,y],i)=>{if(!use[i])return;const r=[1,x,y];for(let a=0;a<3;a++){V[a]+=r[a]*offs[i][k];for(let c=0;c<3;c++)S[a][c]+=r[a]*r[c];}});
+    const det=m=>m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1])-m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0])+m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0]);
+    const D=det(S);if(Math.abs(D)<1e-6){const n=use.filter(Boolean).length||1;const m=ctr.reduce((s,_,i)=>s+(use[i]?offs[i][k]:0),0)/n;return()=>m;}
+    const sol=[0,1,2].map(j=>det(S.map((row,a)=>row.map((v,c)=>c===j?V[a]:v)))/D);return(x,y)=>sol[0]+sol[1]*x+sol[2]*y;};
+   const fx=fit(0),fy=fit(1);pred=ctr.map(([x,y])=>[fx(x,y),fy(x,y)]);
+   const nu=offs.map((o,i)=>Math.hypot(o[0]-pred[i][0],o[1]-pred[i][1])<=0.6);if(nu.filter(Boolean).length<3)break;if(nu.every((v,i)=>v===use[i]))break;use=nu;}
+  if(pred)L.blocks.forEach((bs,bi)=>{const o=offs[bi],p=pred[bi];if(Math.hypot(o[0]-p[0],o[1]-p[1])>0.6){const c=[Math.round(p[0]*4)/4,Math.round(p[1]*4)/4];const b=search(bs,c,0.75,0.25);offs[bi]=[r2(b[0]),r2(b[1])];}});}
  L.blocks.forEach((bs,bi)=>{
-  let best=[0,0],bv=-1;
-  const sc=(dx,dy)=>{let s=0;for(const b of bs)s+=ringDark(R,b.x+dx,b.y+dy,rs);if(s>bv){bv=s;best=[dx,dy];}};
-  for(let dx=-1.5;dx<=1.501;dx+=0.5)for(let dy=-1.5;dy<=1.501;dy+=0.5)sc(dx,dy);
-  {const [cx0,cy0]=best;for(let dx=-0.25;dx<=0.26;dx+=0.25)for(let dy=-0.25;dy<=0.26;dy+=0.25)if(dx||dy)sc(cx0+dx,cy0+dy);}
-  offs[bi]=[r2(best[0]),r2(best[1])];
+  const best=offs[bi];
   let mnx=1e9,mny=1e9,mxx=-1e9,mxy=-1e9;for(const b of bs){mnx=Math.min(mnx,b.x);mny=Math.min(mny,b.y);mxx=Math.max(mxx,b.x);mxy=Math.max(mxy,b.y);}
   const hist=new Uint32Array(256);let n=0;const K=R.K;
   for(let v=Math.max(0,Math.round((mny-4)*K));v<Math.min(R.H,Math.round((mxy+4)*K));v+=2)for(let u=Math.max(0,Math.round((mnx-4)*K));u<Math.min(R.W,Math.round((mxx+4)*K));u+=2){hist[R.g[v*R.W+u]]++;n++;}
@@ -1209,20 +1224,25 @@ function readFills(R,L){
 // Quyết định cho một nhóm ô (một câu / một cột số), dùng độ đậm ĐÃ TRỪ nền (chữ in mờ trong ô):
 // so sánh tương đối trong nhóm nên tô nhạt, tô không kín, chấm nhỏ vẫn nhận; vết tẩy mờ hơn hẳn ô tô thì bỏ qua.
 const LF=0.085;
-function decide(f,T){const idx=f.map((v,i)=>[v||0,i]).sort((a,b)=>b[0]-a[0]),s0=idx.length?idx[0][0]:0,s1=idx.length>1?idx[1][0]:0;
- if(s0<0.05)return{sel:[],uns:false};
+function decide(f,T,f0){const idx=f.map((v,i)=>[v||0,i]).sort((a,b)=>b[0]-a[0]),s0=idx.length?idx[0][0]:0,s1=idx.length>1?idx[1][0]:0;
+ // so với độ đậm ô tô thật của chính phiếu này (f0): vết quá nhạt (< 12%) là nhiễu/chữ in → coi là trống;
+ // 12–22% là vết lưng chừng (tẩy chưa sạch, chạm bút) → không tự quyết, khoanh vàng cho giáo viên xem
+ const lo=Math.max(0.05,f0?0.12*f0:0),hi=Math.max(0.07,f0?0.22*f0:0);
+ if(s0<lo)return{sel:[],uns:false};
+ if(s0<hi)return{sel:[idx[0][1]],uns:true};
  // một ô nổi hẳn lên so với các ô còn lại trong câu (kể cả tô rất nhạt) → chọn ô đó; vết quá mờ thì chọn nhưng đánh dấu xem lại
- if(s1<=Math.max(0.025,0.28*s0,s0>=0.14?0.085:0)){if(s0<0.07&&s1>0.02)return{sel:[],uns:true};return{sel:[idx[0][1]],uns:s0<0.07};}
+ // vết tẩy còn sót thường chỉ đậm 15–35% so với ô tô thật; hai ô cùng tô thật thì đậm gần bằng nhau (≥ 62%)
+ if(s1<=Math.max(0.025,0.42*s0,s0>=0.14?0.085:0)){if(s0<0.07&&s1>0.02)return{sel:[],uns:true};return{sel:[idx[0][1]],uns:s0<0.07};}
  if(s1>=0.62*s0&&s1>=LF){const sel=idx.filter(([v])=>v>=0.62*s0&&v>=LF).map(([,i])=>i).sort((a,b)=>a-b);return{sel,uns:s1<Math.min(T,0.6*s0+0.05)*0.8};}
  return{sel:[idx[0][1]],uns:true};}
-function pick(arr,fills,T){return decide(arr.map(b=>b?fills.get(b):0),T).sel;}
-function readAnswers(L,fills,T){
- const col=arr=>arr.map(c=>{const p=pick(c,fills,T);return p.length===1?String(p[0]):p.length?'?':'_';}).join('');
+function pick(arr,fills,T,f0){return decide(arr.map(b=>b?fills.get(b):0),T,f0).sel;}
+function readAnswers(L,fills,T,f0){
+ const col=arr=>arr.map(c=>{const p=pick(c,fills,T,f0);return p.length===1?String(p[0]):p.length?'?':'_';}).join('');
  const a={made:col(L.made),sbd:col(L.sbd),p1:[],p2:[],p3:[]};
- L.p1.forEach(q=>{a.p1.push(pick(q,fills,T).map(i=>LETTERS[i]).join(''));});
- L.p2.forEach(q=>{a.p2.push(q.map(r=>pick(r,fills,T).map(i=>'DS'[i]).join('')));});
+ L.p1.forEach(q=>{a.p1.push(pick(q,fills,T,f0).map(i=>LETTERS[i]).join(''));});
+ L.p2.forEach(q=>{a.p2.push(q.map(r=>pick(r,fills,T,f0).map(i=>'DS'[i]).join('')));});
  L.p3.forEach(q=>{let s='';for(let j=0;j<4;j++){const opts=[],chs=[];if(j===0){opts.push(q.minus);chs.push('-');}if(q.comma[j]){opts.push(q.comma[j]);chs.push(',');}q.digits[j].forEach((b,d)=>{opts.push(b);chs.push(String(d));});
-   const p=pick(opts,fills,T);if(p.length===1)s+=chs[p[0]];else if(p.length>1)s+='?';}
+   const p=pick(opts,fills,T,f0);if(p.length===1)s+=chs[p[0]];else if(p.length>1)s+='?';}
   a.p3.push(s);});
  return a;
 }
@@ -1309,11 +1329,11 @@ function analyzeCanvas(cv,ex,hint,fuse){const wantTpl=ex?ex.tpl:null;
  const e0=uf[Math.floor(uf.length*0.4)]||0,hiF=uf.filter(v=>v>e0+0.18),f0=hiF.length?hiF[Math.floor(hiF.length*0.5)]:null;
  let T=settingT(),M=0.09;
  if(f0!=null&&f0-e0>0.2){T=Math.min(0.45,Math.max(0.17,e0+0.42*(f0-e0)+(settingT()-0.35)));M=Math.max(0.05,Math.min(0.08,(f0-e0)*0.12));}
- const ans=readAnswers(L,fx,T);
+ const F0=f0!=null&&f0-e0>0.2?f0:null;const ans=readAnswers(L,fx,T,F0);
  const len=ex?(ex.madeLen||3):3;ans.madeRaw=ans.made;ans.made=deriveMade(ans.madeRaw,len,ex&&ex.keys);
  // 2) Ô không chắc chắn: độ đậm nằm trong vùng lưng chừng quanh ngưỡng → không được tự cho điểm
  const unsure=[];
- const chk=(arr,nm)=>{if(decide(arr.filter(Boolean).map(b=>fx.get(b)),T).uns)unsure.push(nm);};
+ const chk=(arr,nm)=>{if(decide(arr.filter(Boolean).map(b=>fx.get(b)),T,F0).uns)unsure.push(nm);};
  L.made.forEach(c=>chk(c,'Mã đề'));if(!ex||!ex.noSbd)L.sbd.forEach(c=>chk(c,'Số báo danh'));
  L.p1.forEach((q,i)=>{if(!ex||i<ex.n1)chk(q,'Phần I câu '+(i+1));});
  L.p2.forEach((q,i)=>{if(!ex||i<ex.n2)q.forEach((r,j)=>chk(r,`Phần II câu ${i+1}${'abcd'[j]}`));});
@@ -1347,10 +1367,11 @@ function grade(ex,ans){
  let p3c=0;for(let i=0;i<ex.n3;i++)if(eqAns(ans.p3[i],key.p3[i])&&!skip.has('Phần III câu '+(i+1)))p3c++;
  const S1=p1c*pm(ex.p1pt),S3=p3c*pm(ex.p3pt),RAW=S1+s2+S3,MAX=ex.n1*pm(ex.p1pt)+ex.n2*Math.max(...p2of(ex).map(pm))+ex.n3*pm(ex.p3pt);
  const total=ex.scale10&&MAX>0?RAW*10/MAX:RAW;
- return{p1c,s1:r2(S1/1000),p2c,s2:r2(s2/1000),p3c,s3:r2(S3/1000),raw:r2(RAW/1000),total:r2(total/1000),max:r2(MAX/1000)};
+ // giữ đúng phần nghìn (vd 0,125 điểm/câu); chỉ điểm đã quy đổi thang 10 mới làm tròn 2 chữ số
+ return{p1c,s1:r3(S1/1000),p2c,s2:r3(s2/1000),p3c,s3:r3(S3/1000),raw:r3(RAW/1000),total:ex.scale10?r2(total/1000):r3(total/1000),max:r3(MAX/1000)};
 }
 // Điểm cộng các phần; nếu bài kiểm tra chọn "Quy đổi về thang điểm 10" thì ghi rõ phép quy đổi
-const rawOf=s=>s.raw!=null?s.raw:r2((s.s1||0)+(s.s2||0)+(s.s3||0));
+const rawOf=s=>s.raw!=null?s.raw:r3((s.s1||0)+(s.s2||0)+(s.s3||0));
 const scaledNote=(e,s)=>e.scale10?`${fmt(rawOf(s))}/${fmt(examMax(e))} điểm, quy về thang 10 = ${fmt(rawOf(s))} × 10 ÷ ${fmt(examMax(e))}`:'';
 function issuesOf(ex,res,all){
  const w=[],a=res.ans;
