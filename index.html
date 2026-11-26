@@ -1337,7 +1337,9 @@ function examMax(ex){return ex.n1*ex.p1pt+ex.n2*Math.max(...p2of(ex))+ex.n3*ex.p
 // Cộng điểm bằng số nguyên (phần nghìn điểm) để không có sai số kiểu 0,1 + 0,2 = 0,30000000000000004
 const pm=x=>Math.round((+x||0)*1000);
 // Ô khoanh vàng (tô mờ nghi ngờ) KHÔNG được cộng điểm cho đến khi giáo viên xem và bấm "Cộng điểm" (ans.acc)
-const pendOf=ans=>{const acc=new Set(ans.acc||[]);return new Set((ans.uns||[]).filter(n=>!acc.has(n)));};
+// chỉ các câu có tính điểm (Phần I/II/III); Mã đề, Số báo danh tô mờ được báo riêng ở mục cần kiểm tra
+const scoreUns=ans=>(ans.uns||[]).filter(n=>/^Phần /.test(n));
+const pendOf=ans=>{const acc=new Set(ans.acc||[]);return new Set(scoreUns(ans).filter(n=>!acc.has(n)));};
 function grade(ex,ans){
  const key=ex.keys&&ex.keys[ans.made];if(!key)return null;const skip=pendOf(ans);
  let p1c=0;for(let i=0;i<ex.n1;i++)if(ans.p1[i]&&ans.p1[i]===key.p1[i]&&!skip.has('Phần I câu '+(i+1)))p1c++;
@@ -3093,7 +3095,7 @@ V.results=async(p)=>{
  after(){$('#rF').onchange=ev=>replace('results',{...p,f:ev.target.value});$('#rS').onchange=ev=>replace('results',{...p,so:ev.target.value});}};
 };
 // Danh sách ô khoanh vàng: giáo viên xem ảnh rồi bấm "Cộng điểm" cho câu thấy học sinh tô đúng
-function pendHtml(e,r){const a=r.ans,list=a.uns||[];if(!list.length)return'';const key=e.keys[a.made],acc=new Set(a.acc||[]);
+function pendHtml(e,r){const a=r.ans,list=scoreUns(a);if(!list.length)return'';const key=e.keys[a.made],acc=new Set(a.acc||[]);
  const rd=nm=>{let m;if((m=nm.match(/^Phần I câu (\d+)$/))){const i=+m[1]-1;return[a.p1[i]||'–',key?key.p1[i]:''];}
   if((m=nm.match(/^Phần II câu (\d+)([abcd])$/))){const i=+m[1]-1,j='abcd'.indexOf(m[2]),v=(a.p2[i]||[])[j],k=key&&key.p2[i]?key.p2[i][j]:null;return[v==='D'?'Đ':v==='S'?'S':'–',k==null?'':k?'Đ':'S'];}
   if((m=nm.match(/^Phần III câu (\d+)$/))){const i=+m[1]-1;return[a.p3[i]||'–',key?normAns(key.p3[i]||''):''];}return['',''];};
