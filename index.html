@@ -1422,7 +1422,7 @@ async function saveFile(name,data){name=asciiName(name);
  if(window.AndroidBridge&&AndroidBridge.saveFile){try{const msg=AndroidBridge.saveFile(name,await toB64(data));toast(msg||('Đã lưu '+name+' vào Tải xuống/ChamThi'),4000);return true;}catch(e){toast('Không lưu được tệp: '+e.message,5000);return false;}}
  if(!(window.claude&&claude.use))return anchorSave(name,data);
  const d=await getDL();
- if(!d){toast('Trang này chưa được phép lưu tệp vào máy. Hãy mở app trong ứng dụng Claude hoặc trình duyệt và thử lại.',5000);return false;}
+ if(!d){toast('Trang này chưa được phép lưu tệp vào máy. Hãy mở app bằng Chrome, Safari hoặc app đã cài rồi thử lại.',5000);return false;}
  try{await d.save({filename:name,data});toast('Đã lưu '+name);return true;}
  catch(e){if(e&&e.code==='declined')return false;if(e&&e.code==='rate_limited'){toast('Đang có một hộp thoại lưu tệp mở, hãy xác nhận nó trước.');return false;}toast('Không lưu được tệp: '+(e&&e.message||e));return false;}
 }
@@ -1895,7 +1895,7 @@ function showKeyQR(e){
 /* ---------- Mã QR tra điểm cho học sinh ---------- */
 function appBase(){try{const v=localStorage.getItem('ct_base');if(v)return v;}catch(e){}
  if(/^https?:$/.test(location.protocol)&&!/claude\.(ai|site|com)|claudeusercontent|androidplatform\.net|localhost/.test(location.hostname))return location.origin+location.pathname;return DEFAULT_BASE;}
-const BUILD='18/11/2026 14:55';
+const BUILD='26/11/2026';
 const DEFAULT_BASE='https://hatthi32.github.io/CHAMTHI-TN/';
 const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const unb64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
@@ -1920,7 +1920,7 @@ async function showResultQR(e,groups){
  modal(`<h2>Mã QR tra điểm cho học sinh</h2>
  <div class="note">Học sinh dùng camera điện thoại quét mã, trang kết quả mở ra: điểm từng phần, câu làm sai và đáp án đúng của từng bạn trong lớp.</div>
  <label class="f">Địa chỉ bản cài riêng của app<input class="in" id="qBase" value="${esc(base)}" placeholder="https://ten-cua-ban.github.io/chamthi/" inputmode="url"></label>
- <div class="note">Mã QR mở trang tra điểm trên bản cài riêng (xem Hướng dẫn → Cài app riêng), nên cần địa chỉ đó. Bản trong Claude không mở được cho học sinh.</div>
+ <div class="note">Mã QR mở trang tra điểm trên địa chỉ web của app (mặc định hatthi32.github.io/CHAMTHI-TN).</div>
  <label class="f">Lớp<select class="in" id="qCls">${opts.map(([k,l],i)=>`<option value="${i}">${esc(k)} · ${l.filter(x=>x.r&&x.r.score).length} bài</option>`).join('')}</select></label>
  <label class="row" style="gap:10px;flex-wrap:nowrap"><input type="checkbox" id="qHide" style="width:20px;height:20px;accent-color:var(--accent)"><span>Ẩn họ tên, chỉ hiện SBD</span></label>
  <div id="qOut" style="display:flex;flex-direction:column;gap:10px;align-items:center"></div>
@@ -2068,7 +2068,7 @@ const buzz=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}};
 function liveUnavailable(err){
  const inClaude=!!(window.claude&&claude.use);
  const denied=err&&err.name==='NotAllowedError'&&!inClaude;
- modal(`<h2>Chưa mở được camera trực tiếp</h2><div class="note">${denied?'Trình duyệt đang chặn quyền camera của trang này. Vào cài đặt trình duyệt, cho phép Camera với trang này rồi mở lại.':inClaude?'Khi mở trong ứng dụng Claude, trang không được phép dùng camera trực tiếp nên không tự động quét được. Hãy dùng bản cài riêng của app (xem Hướng dẫn → Cài app riêng) để tự động quét. Ngay bây giờ vẫn chấm được bằng nút "Chụp từng phiếu".':'Thiết bị hoặc trình duyệt này không hỗ trợ camera trực tiếp. Dùng nút "Chụp từng phiếu" thay thế.'}</div><div class="row" style="justify-content:flex-end"><button class="btn" data-m="guide">Xem hướng dẫn</button><button class="btn pri" data-m="x">Đã hiểu</button></div>`,a=>{if(a==='guide')go('guide');});
+ modal(`<h2>Chưa mở được camera trực tiếp</h2><div class="note">${denied?'Trình duyệt đang chặn quyền camera của trang này. Vào cài đặt trình duyệt, cho phép Camera với trang này rồi mở lại.':inClaude?'Khi mở trong ứng dụng Claude, trang không được phép dùng camera trực tiếp nên không tự động quét được. Hãy cài app (xem Hướng dẫn → Cài app lên điện thoại) để tự động quét. Ngay bây giờ vẫn chấm được bằng nút "Chụp từng phiếu".':'Thiết bị hoặc trình duyệt này không hỗ trợ camera trực tiếp. Dùng nút "Chụp từng phiếu" thay thế.'}</div><div class="row" style="justify-content:flex-end"><button class="btn" data-m="guide">Xem hướng dẫn</button><button class="btn pri" data-m="x">Đã hiểu</button></div>`,a=>{if(a==='guide')go('guide');});
 }
 const fpOf=a=>[a.made,a.sbd,a.p1.join(','),a.p2.map(q=>q.join('')).join(','),a.p3.join(',')].join('|');
 async function startLive(e){
@@ -2116,17 +2116,18 @@ async function startLive(e){
    //(hai học sinh có thể tô giống hệt nhau, hoặc giáo viên muốn chấm lại)
    if(session.fps.has(fp)&&!force){const t=performance.now();if(dupFp!==fp){dupFp=fp;dupSince=t;}
     if(t-dupSince<1000){recheckAt=t+350;coolUntil=t+350;pendFp=null;flash('Phiếu này đã chấm rồi · giữ yên thêm 1 giây để chấm lại','ok',1100);busy=false;return;}}
-   dupFp=null;
    const now2=performance.now();
    unsureTries=0;
-   // Chỉ lưu khi hai lần đọc liên tiếp cho kết quả giống hệt nhau
-   if(!force&&A.unsure.length&&pendFp!==fp){pendFp=fp;agreeTries++;
+   // Chỉ lưu khi hai lần đọc liên tiếp (hai khung hình khác nhau) cho kết quả giống hệt nhau, kể cả các ô khoanh vàng
+   //→ một khung hình bị nhòe/rung không thể làm ra điểm khác
+   const fpU=fp+'|'+A.unsure.join(',');
+   if(!force&&pendFp!==fpU){pendFp=fpU;agreeTries++;
     if(agreeTries>=5){agreeTries=0;pendFp=null;coolUntil=now2+300;}
     else{msgUntil=0;coolUntil=now2+30;}busy=false;return;}
    agreeTries=0;pendFp=null;
    if(A.unsure.length)A.flags.push('Cần kiểm tra: '+A.unsure.slice(0,8).join(', '));
    tone([1800],0.04);{const fl=document.createElement('div');fl.className='lflash';ov.appendChild(fl);setTimeout(()=>fl.remove(),260);}
-   fuse={};const {res}=await saveAnalysis(e,A);session.fps.add(fp);session.count++;session.last=res;lastFp=fp;needLost=true;recheckAt=performance.now()+900;
+   fuse={};dupFp=null;const {res}=await saveAnalysis(e,A);session.fps.add(fp);session.count++;session.last=res;lastFp=fp;needLost=true;recheckAt=performance.now()+900;
    const crit=res.issues.some(critical);
    if(crit){tone([440,300,440],0.15);buzz([200,80,200]);}
    else{tone([880,1320],0.1);buzz(80);}msgUntil=0;setSt('');
@@ -3358,18 +3359,17 @@ V.guide=async()=>({title:'Hướng dẫn',html:`
  <b>Không lưu, phải chụp lại</b> (tiếng bíp trầm hai lần): ảnh quá tối; ảnh nhòe; bị lóa hoặc phản chiếu làm mất nét ô. App nêu đúng vùng không đọc được, ví dụ "Phần I câu 5, Phần II câu 3".<br>
  <b>Lưu nhưng báo đỏ</b> (ba tiếng bíp): mã đề tô thiếu, tô nhiều ô trong một cột, hoặc mã đề không có trong đáp án. Sửa ở Bài đã chấm → Xem / sửa, điểm tự tính lại.<br>
  <b>Lưu và đánh dấu "Cần kiểm tra"</b>: ô tô quá mờ, tô nhiều đáp án, SBD tô sai, trùng SBD, SBD không có trong lớp.</div></div>
- <div class="card" id="install"><h3>Cài app riêng (để tự động quét)</h3><div class="note">Trong ứng dụng Claude, trang không được dùng camera trực tiếp nên chỉ chấm được bằng "Chụp từng phiếu". Để tự động quét, đưa tệp app lên một trang web miễn phí của riêng bạn:</div>
- <ol class="steps"><li>Vào <b>github.com</b>, tạo tài khoản miễn phí, bấm <b>New repository</b>, đặt tên <b>chamthi</b>, chọn <b>Public</b>.</li>
- <li>Trong kho vừa tạo, chọn <b>Add file → Upload files</b>, tải lên tệp <b>index.html</b> của app, bấm <b>Commit changes</b>.</li>
- <li>Vào <b>Settings → Pages</b>, mục Branch chọn <b>main</b>, bấm <b>Save</b>. Sau 1–2 phút có địa chỉ dạng <b>tên-của-bạn.github.io/chamthi</b>.</li>
- <li>Mở địa chỉ đó bằng Chrome (Android) hoặc Safari (iPhone), chọn <b>Thêm vào màn hình chính</b>. Lần đầu quét, cho phép dùng Camera.</li>
- <li>Dữ liệu ở bản cài riêng tách biệt với bản trong Claude. Muốn chuyển dữ liệu: Cài đặt → Tải bản sao lưu ở bản cũ, rồi Khôi phục ở bản mới.</li></ol></div>
+ <div class="card" id="install"><h3>Cài app lên điện thoại, máy tính</h3><div class="note">App miễn phí, chạy không cần mạng sau khi cài. Dữ liệu chấm lưu ngay trên máy của bạn.</div>
+ <ol class="steps"><li><b>Android:</b> tải tệp <b>ChamThi.apk</b> tại <b>github.com/HatThi32/CHAMTHI-TN/raw/apk/ChamThi.apk</b>, mở tệp để cài (cho phép "Cài ứng dụng không rõ nguồn" nếu máy hỏi). App tự báo khi có bản mới.</li>
+ <li><b>iPhone, iPad:</b> mở <b>hatthi32.github.io/CHAMTHI-TN</b> bằng <b>Safari</b>, bấm nút Chia sẻ → <b>Thêm vào MH chính</b>. Mở app từ biểu tượng mới trên màn hình, lần đầu quét cho phép dùng Camera.</li>
+ <li><b>Máy tính:</b> mở cùng địa chỉ trên bằng Chrome hoặc Edge (có thể bấm biểu tượng cài đặt trên thanh địa chỉ), hoặc mở tệp ChamThiQM.html.</li>
+ <li>Mỗi máy lưu dữ liệu riêng. Muốn chuyển sang máy khác: Cài đặt → <b>Tải bản sao lưu</b> ở máy cũ, rồi <b>Khôi phục từ bản sao lưu</b> ở máy mới.</li></ol></div>
  <div class="card"><h3>Mẹo để máy đọc chính xác</h3><div class="note">Chụp nơi đủ sáng, tránh bóng tay và bóng điện thoại đổ lên phiếu. Để phiếu phẳng, không gấp góc. Phiếu nên chiếm phần lớn khung hình, đủ 4 ô vuông đen. Nếu bút chì quá nhạt, giảm Độ nhạy trong Cài đặt.</div></div>`});
 
 /* ================= KHỞI ĐỘNG ================= */
 window.__ctUpdated=()=>{modal(`<h2>App vừa được cập nhật</h2><div class="note">Đã tải bản mới nhất của app ChamthiQM. Tải lại để dùng ngay, dữ liệu vẫn giữ nguyên.</div><div class="row" style="justify-content:flex-end"><button class="btn" data-m="x">Để sau</button><button class="btn pri" data-m="r">Tải lại</button></div>`,a=>{if(a==='r')location.reload();});};
 window.__ctBack=()=>{if(window.__ctBackHook&&window.__ctBackHook())return true;const lv=document.querySelector('.live');if(lv){const b=lv.querySelector('#lStop,#qStop');if(b)b.click();return true;}const md=document.querySelector('.modal');if(md){md.remove();return true;}if(S.stack.length>1){back();return true;}return false;};
 (async()=>{if(location.hash.startsWith('#kq=')){viewerBoot();return;}await DB.open();await loadAll();S.stack=[{v:'home',p:{}}];render();})();
-window.__ct={xd:{readPdf:(...a)=>xdReadPdf(...a),parsePdf:(...a)=>xdParsePdf(...a),buildPdf:(...a)=>xdBuildPdfDocx(...a),read:(...a)=>xdReadDocx(...a),parse:(...a)=>xdParse(...a),build:(...a)=>xdBuildDocx(...a),rows:(...a)=>xdKeyRows(...a),plan:(...a)=>xdPlan(...a)},dbg:{readFills,readQM,findMarkers,markerQuads,homography,readCode,warpGray,FMT,toGray,liveGuide,liveHits,liveQuad,deriveMade,issuesOf,drawOverlay},TPLS,lay,drawSheet,analyzeCanvas,grade,eqAns,DB,loadAll,fontsReady};
+window.__ct={go:(...a)=>go(...a),S:()=>S,xd:{readPdf:(...a)=>xdReadPdf(...a),parsePdf:(...a)=>xdParsePdf(...a),buildPdf:(...a)=>xdBuildPdfDocx(...a),read:(...a)=>xdReadDocx(...a),parse:(...a)=>xdParse(...a),build:(...a)=>xdBuildDocx(...a),rows:(...a)=>xdKeyRows(...a),plan:(...a)=>xdPlan(...a)},dbg:{readFills,readQM,findMarkers,markerQuads,homography,readCode,warpGray,FMT,toGray,liveGuide,liveHits,liveQuad,deriveMade,issuesOf,drawOverlay},TPLS,lay,drawSheet,analyzeCanvas,grade,eqAns,DB,loadAll,fontsReady};
 </script>
 </body></html>
