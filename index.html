@@ -1224,10 +1224,11 @@ function readFills(R,L){
 // Quyết định cho một nhóm ô (một câu / một cột số), dùng độ đậm ĐÃ TRỪ nền (chữ in mờ trong ô):
 // so sánh tương đối trong nhóm nên tô nhạt, tô không kín, chấm nhỏ vẫn nhận; vết tẩy mờ hơn hẳn ô tô thì bỏ qua.
 const LF=0.085;
-function decide(f,T,f0){const idx=f.map((v,i)=>[v||0,i]).sort((a,b)=>b[0]-a[0]),s0=idx.length?idx[0][0]:0,s1=idx.length>1?idx[1][0]:0;
- // so với độ đậm ô tô thật của chính phiếu này (f0): vết quá nhạt (< 12%) là nhiễu/chữ in → coi là trống;
- // 12–22% là vết lưng chừng (tẩy chưa sạch, chạm bút) → không tự quyết, khoanh vàng cho giáo viên xem
- const lo=Math.max(0.05,f0?0.12*f0:0),hi=Math.max(0.07,f0?0.22*f0:0);
+function decide(f,T,o){const f0=o&&o.f0;const idx=f.map((v,i)=>[v||0,i]).sort((a,b)=>b[0]-a[0]),s0=idx.length?idx[0][0]:0,s1=idx.length>1?idx[1][0]:0;
+ // dưới 0,05 là giấy trắng; từ 0,05 đến 22% độ đậm ô tô thật của chính phiếu này (f0) là vết lưng chừng
+ // (tẩy chưa sạch, chạm bút, ô tô bị chói đèn) → không tự quyết, khoanh vàng cho giáo viên xem, chưa cộng điểm
+ // phiếu mẫu cũ (chữ số in mờ trong ô): nền chữ in còn sót tới ~0,07 nên vết dưới 12% f0 coi là trống
+ const lo=o&&o.legacy&&f0?Math.max(0.05,0.12*f0):0.05,hi=Math.max(0.07,f0?0.22*f0:0);
  if(s0<lo)return{sel:[],uns:false};
  if(s0<hi)return{sel:[idx[0][1]],uns:true};
  // một ô nổi hẳn lên so với các ô còn lại trong câu (kể cả tô rất nhạt) → chọn ô đó; vết quá mờ thì chọn nhưng đánh dấu xem lại
@@ -1292,7 +1293,7 @@ function analyzeCanvas(cv,ex,hint,fuse){const wantTpl=ex?ex.tpl:null;
  allC.sort((x,y)=>x-y);const medC=allC[allC.length>>1]||0;
  if(medC<0.05)return{error:'Ảnh bị nhòe hoặc mờ, máy không thấy rõ các ô tròn. Giữ điện thoại chắc tay, đưa lại gần phiếu hơn và chụp nơi đủ sáng.',quality:true};
  const cmin=Math.max(0.04,Math.min(CMIN,medC*0.4));
- const pwAll=[];for(const bi of usedB)for(const b of L.blocks[bi])if(usedBubble(ex,b))pwAll.push(paperL.get(b));pwAll.sort((a,b)=>a-b);const medPW=pwAll[pwAll.length>>1]||255,bright=b=>{const pw=paperL.get(b);return pw-medPW>=Math.max(10,medPW*0.06)||pw>=250;};
+ const pwAll=[];for(const bi of usedB)for(const b of L.blocks[bi])if(usedBubble(ex,b))pwAll.push(paperL.get(b));pwAll.sort((a,b)=>a-b);const medPW=pwAll[pwAll.length>>1]||255,bright=b=>{const pw=paperL.get(b);return pw-medPW>=Math.max(10,medPW*0.06)||(pw>=250&&medPW<238);};
  // Ô bị chói ở khung hình này: viền ô bạc đi dưới vùng giấy sáng gắt, hoặc phần lớn lòng ô sáng hơn giấy (chì bóng hắt đèn)
  const glared=b=>hotF.get(b)>=0.5||ringC.get(b)<cmin||(bright(b)&&ringC.get(b)<medC*0.65);
  // Ghép nhiều khung hình khi quét liên tục: vệt chói di chuyển khi điện thoại nghiêng, vết tô thì không.
@@ -1311,7 +1312,7 @@ function analyzeCanvas(cv,ex,hint,fuse){const wantTpl=ex?ex.tpl:null;
  //    Ô tô dưới vùng chói trông nhạt hơn thật → có thể chấm sai, nên báo và KHÔNG chấm.
  {const gl=new Map();
   for(const bi of usedB)for(const b of L.blocks[bi]){if(!usedBubble(ex,b)||fz.has(b))continue;const pw=paperL.get(b),c=ringC.get(b);
-   if((pw-medPW>=Math.max(10,medPW*0.06)||pw>=250)&&c<medC*0.65){const nm=qName(b);gl.set(nm,(gl.get(nm)||0)+1);}
+   if((pw-medPW>=Math.max(10,medPW*0.06)||(pw>=250&&medPW<238))&&c<medC*0.65){const nm=qName(b);gl.set(nm,(gl.get(nm)||0)+1);}
    else if(hotF.get(b)>=0.5){const nm=qName(b);gl.set(nm,(gl.get(nm)||0)+3);}}
   const nG=[...gl.values()].reduce((a,b)=>a+b,0);
   if(nG>=3){const names=[...gl.keys()];return{error:`Phiếu bị chói đèn ở ${names.length>5?names.slice(0,5).join(', ')+'…':names.join(', ')}. Nghiêng nhẹ phiếu hoặc điện thoại, hoặc che bớt đèn cho hết vệt sáng rồi quét lại.`,quality:true,glare:true,badList:names};}}
@@ -1329,7 +1330,7 @@ function analyzeCanvas(cv,ex,hint,fuse){const wantTpl=ex?ex.tpl:null;
  const e0=uf[Math.floor(uf.length*0.4)]||0,hiF=uf.filter(v=>v>e0+0.18),f0=hiF.length?hiF[Math.floor(hiF.length*0.5)]:null;
  let T=settingT(),M=0.09;
  if(f0!=null&&f0-e0>0.2){T=Math.min(0.45,Math.max(0.17,e0+0.42*(f0-e0)+(settingT()-0.35)));M=Math.max(0.05,Math.min(0.08,(f0-e0)*0.12));}
- const F0=f0!=null&&f0-e0>0.2?f0:null;const ans=readAnswers(L,fx,T,F0);
+ const F0={f0:f0!=null&&f0-e0>0.2?f0:null,legacy:/^[01]:/.test(lk)};const ans=readAnswers(L,fx,T,F0);
  const len=ex?(ex.madeLen||3):3;ans.madeRaw=ans.made;ans.made=deriveMade(ans.madeRaw,len,ex&&ex.keys);
  // 2) Ô không chắc chắn: độ đậm nằm trong vùng lưng chừng quanh ngưỡng → không được tự cho điểm
  const unsure=[];
